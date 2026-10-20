@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   BookOpen,
   Calendar,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Compass,
@@ -14,314 +13,83 @@ import {
   Scale,
   TrendingUp,
 } from 'lucide-react';
-import { IndexName, PitchEvaluation } from '../types/rawStadia';
-import { getBootRecommendation } from '../utils/rawStadiaEngine';
+import { IndexName, PitchEvaluation, ReferenceBaselineProfile } from '../types/rawStadia';
+import { RAW_STADIA_INDEX_SPECS } from '../data/rawStadiaKnowledge';
+import { CORE_INDEX_NAMES } from '../utils/rawStadiaEngine';
 import { MetricInfoTrigger } from './AppendixAModal';
 
-export type ProgressionMetricKey = IndexName | 'Hardness' | 'StudDepth' | 'RotationalTorque';
-
-export type ClinicalLensId =
-  | 'patellar_achilles'
-  | 'muscular_fatigue'
-  | 'joint_torque'
-  | 'groin_adductor'
-  | 'general';
+export type ClinicalLensId = 'impact_lens' | 'energy_lens' | 'grip_lens' | 'triad_overview';
 
 interface ClinicalLensSpec {
   id: ClinicalLensId;
   title: string;
   shortBadge: string;
-  defaultMetric: ProgressionMetricKey;
-  pathologyFocus: string;
+  defaultMetric: IndexName;
+  spectrumSummary: string;
   mechanismSummary: string;
   managementGuidance: string;
 }
 
 const CLINICAL_LENSES: ClinicalLensSpec[] = [
   {
-    id: 'patellar_achilles',
-    title: 'Patellar & Achilles Tendon Load Context',
-    shortBadge: 'Suggested Lens • Tendon & Stiffness',
+    id: 'impact_lens',
+    title: 'Impact: Soft vs. Hard Field Spectrum',
+    shortBadge: 'PDF Spectrum • Muscles/Ligaments ↔ Tendons/Joints',
     defaultMetric: 'Impact',
-    pathologyFocus: 'Contextual watch-area for patellar tendinosis, Achilles soreness, and anterior knee load',
+    spectrumSummary:
+      'SOFT FIELD (Energy Absorption • Watch: Muscles | Ligaments) ↔ HARD FIELD (Energy Return • Watch: Tendons | Joints)',
     mechanismSummary:
-      'Higher surface firmness (e.g., Impact > 6.0, Hardness > 85 Gm), steeper soft-to-firm day-to-day transitions (Δ Impact ≥ +0.8), or wider within-pitch variance (SD ≥ 0.65) can shorten impact attenuation time and may contribute to higher braking impulse during deceleration.',
+      'Higher Impact values (+1 SD above reference or rapid day-to-day jumps Δ ≥ +0.75) indicate a firmer surface with shorter deceleration time, whereas lower Impact values (−1 SD below reference) indicate a softer, energy-absorbing surface.',
     managementGuidance:
-      'Suggested consideration: When transitioning abruptly to firmer surfaces or high-variance pitches, consider cross-checking subjective soreness in players with existing patellar/Achilles history, evaluating cushioned/conical FG-S footwear options, or moderating high-eccentric deceleration volume where appropriate.',
+      'Suggested consideration: When transitioning abruptly to a Harder Field (+1 SD above baseline, e.g., St. Louis, Arizona, Minnesota), consider monitoring athletes with patellar/Achilles tendon or joint histories. On Softer Fields (−1 SD below baseline), consider monitoring muscular and ligamentous fatigue.',
   },
   {
-    id: 'muscular_fatigue',
-    title: 'Calf / Hamstring Work & Metabolic Demand',
-    shortBadge: 'Suggested Lens • Compliant Turf Work',
+    id: 'energy_lens',
+    title: 'Energy: Dissipating vs. Rebounding Field',
+    shortBadge: 'PDF Spectrum • Calves/Cramps ↔ Tendons/Joints',
     defaultMetric: 'Energy',
-    pathologyFocus: 'Contextual watch-area for soleus/gastrocnemius tightness, posterior chain fatigue, and internal load',
+    spectrumSummary:
+      'DISSIPATING FIELD (Energy Loss • Watch: Calves | Cramps) ↔ REBOUNDING FIELD (Energy Return • Watch: Tendons | Joints)',
     mechanismSummary:
-      'More compliant, energy-dissipating surfaces (e.g., Impact < 3.8 or Energy < 3.8) deform further under foot strike, which biomechanically increases ground contact time and can elevate concentric/eccentric muscle-tendon work and metabolic cost for a given running speed.',
+      'Lower Energy Restitution values (−1 SD below reference) indicate a dissipating surface where the athlete works harder to generate propulsion, whereas higher Energy values (+1 SD above reference) indicate greater rebound.',
     managementGuidance:
-      'Suggested consideration: When sessions fall below the target window (Impact < 4.0 or Energy < 3.8) or show localized soft zones, consider that internal physiological effort and lower-calf/hamstring fatigue may be slightly elevated relative to GPS external distance.',
+      'Suggested consideration: Following sessions on a more Dissipating Field (lower Energy index), internal calf/soleus work and cramping susceptibility may be slightly elevated relative to external GPS distance.',
   },
   {
-    id: 'joint_torque',
-    title: 'Knee & Ankle Rotational Fixation Context',
-    shortBadge: 'Suggested Lens • Peak Torque & Release',
+    id: 'grip_lens',
+    title: 'Grip: Low vs. High Traction Field',
+    shortBadge: 'PDF Spectrum • Groin/Slipping ↔ Ankle/Knee',
     defaultMetric: 'Grip',
-    pathologyFocus: 'Contextual watch-area for ankle/syndesmosis torque, knee rotational moments, and cleat release',
+    spectrumSummary:
+      'LOW TRACTION FIELD (Less Resistance • Watch: Groin | Slipping) ↔ HIGH TRACTION FIELD (More Resistance • Watch: Ankle | Knee)',
     mechanismSummary:
-      'Higher rotational resistance (e.g., Grip > 7.2 mean, localized zone spikes ≥ 8.0, or Rotational Torque > 52 Nm) indicates stronger cleat-turf fixation during pivoting, which can increase external transverse-plane moments transmitted to the ankle and knee if studs do not release cleanly.',
+      'Higher Grip values (+1 SD above reference or localized zone spikes ≥ 8.0) indicate stronger rotational fixation during pivoting, whereas lower Grip values (−1 SD below reference) indicate reduced shear resistance and higher slipping potential.',
     managementGuidance:
-      'Suggested consideration: On higher-grip surfaces or pitches with high central-corridor torque spikes, consider suggesting conical Firm Ground (FG-S / FG-L) outsoles over aggressive bladed or long metal studs to encourage smoother rotational release.',
+      'Suggested consideration: On High Traction Fields or pitches with wide ±SD grip variance, consider ankle/knee rotational load. On Low Traction Fields, consider adductor/groin stabilization demands.',
   },
   {
-    id: 'groin_adductor',
-    title: 'Adductor / Groin Shear & Slip Context',
-    shortBadge: 'Suggested Lens • Penetration & Slip',
-    defaultMetric: 'StudDepth',
-    pathologyFocus: 'Contextual watch-area for lateral cut micro-slipping and adductor/hip flexor stabilization load',
-    mechanismSummary:
-      'Compact rootzones or newly laid sod with shallower stud penetration (< 9.5 mm) or lower shear traction (Grip < 5.5) can reduce lateral cleat purchase during high-velocity cutting, potentially increasing rapid reactive stabilization demands on the adductors.',
-    managementGuidance:
-      'Suggested consideration: When Stud Penetration Depth dips below ~9.5 mm on firmer turf, players who feel they are "skating" on long/wide studs may benefit from testing shorter, sharper conical FG-S studs for more consistent penetration.',
-  },
-  {
-    id: 'general',
-    title: 'All-Metric Longitudinal Overview',
-    shortBadge: 'General Surface Progression',
+    id: 'triad_overview',
+    title: 'All-3 Core Indexes Overview (Impact • Energy • Grip)',
+    shortBadge: 'Full 3-Index Camp Progression',
     defaultMetric: 'Impact',
-    pathologyFocus: 'Multi-parameter camp surface overview across 0–10 indices & RAA/RTT hardware sensors',
+    spectrumSummary:
+      'Simultaneous inspection of Impact (0–10), Energy (0–10), and Grip (0–10) across the selected camp date window.',
     mechanismSummary:
-      'Displays chronological team surface exposure (Mean ± 1 SD and 18-zone Min–Max spread) alongside the suggested target range and reference benchmark across the selected date window.',
+      'Tracks chronological team surface exposure (Session Mean ± 1 SD and 18-zone Min–Max spread) against the empirical Reference Band (Mean ± 1 SD) on the Y-axis.',
     managementGuidance:
-      'Select any surface index or physical sensor below to inspect day-over-day shifts, within-pitch variance ribbons, and suggested footwear considerations.',
+      'Toggle between Impact, Energy, and Grip below to inspect day-to-day shifts (Δ), within-pitch spatial variance (±SD), and sessions falling outside the reference band.',
   },
 ];
 
-interface MetricChartConfig {
-  key: ProgressionMetricKey;
-  label: string;
-  shortLabel: string;
-  unit: string;
-  yMin: number;
-  yMax: number;
-  idealMin: number;
-  idealMax: number;
-  idealLabel: string;
-  highZoneLabel: string;
-  lowZoneLabel: string;
-  significantShiftThreshold: number;
-  highSdThreshold: number;
-  appendixKey: string;
+interface LongitudinalTimelineProps {
+  evaluations: PitchEvaluation[];
+  selectedPrimaryId: string;
+  selectedCompareId: string;
+  referenceProfile: ReferenceBaselineProfile;
+  onSelectPrimary: (id: string) => void;
+  onSelectCompare: (id: string) => void;
+  onOpenAppendixA?: (metricKey: string) => void;
 }
-
-const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
-  Impact: {
-    key: 'Impact',
-    label: 'Impact Index (0–10)',
-    shortLabel: 'Impact',
-    unit: '/10',
-    yMin: 1.5,
-    yMax: 8.5,
-    idealMin: 4.0,
-    idealMax: 6.0,
-    idealLabel: 'Target Range: 4.0 – 6.0',
-    highZoneLabel: 'Firmer Surface / Suggested Tendon Watch (> 6.0)',
-    lowZoneLabel: 'Softer Surface / Higher Muscular Work (< 4.0)',
-    significantShiftThreshold: 0.75,
-    highSdThreshold: 0.65,
-    appendixKey: 'Impact',
-  },
-  Energy: {
-    key: 'Energy',
-    label: 'Energy Return Index (0–10)',
-    shortLabel: 'Energy',
-    unit: '/10',
-    yMin: 1.5,
-    yMax: 7.5,
-    idealMin: 3.8,
-    idealMax: 5.5,
-    idealLabel: 'Target Range: 3.8 – 5.5',
-    highZoneLabel: 'Higher Rebound (> 5.5)',
-    lowZoneLabel: 'More Energy-Dissipating / Heavy (< 3.8)',
-    significantShiftThreshold: 0.5,
-    highSdThreshold: 0.45,
-    appendixKey: 'Energy',
-  },
-  Grip: {
-    key: 'Grip',
-    label: 'Grip & Traction Index (0–10)',
-    shortLabel: 'Grip',
-    unit: '/10',
-    yMin: 3.0,
-    yMax: 9.5,
-    idealMin: 5.5,
-    idealMax: 7.2,
-    idealLabel: 'Target Range: 5.5 – 7.2',
-    highZoneLabel: 'Higher Fixation / Torque Watch (> 7.2)',
-    lowZoneLabel: 'Lower Traction / Slip Watch (< 5.5)',
-    significantShiftThreshold: 0.65,
-    highSdThreshold: 0.65,
-    appendixKey: 'Grip',
-  },
-  Hardness: {
-    key: 'Hardness',
-    label: 'Surface Hardness (Gm)',
-    shortLabel: 'Hardness (Gm)',
-    unit: 'Gm',
-    yMin: 60,
-    yMax: 112,
-    idealMin: 68,
-    idealMax: 85,
-    idealLabel: 'Target Range: 68 – 85 Gm',
-    highZoneLabel: 'Firmer Surface / Peak Decel Watch (> 85 Gm)',
-    lowZoneLabel: 'Softer / Heavier Rootzone (< 68 Gm)',
-    significantShiftThreshold: 7.0,
-    highSdThreshold: 4.5,
-    appendixKey: 'Hardness',
-  },
-  StudDepth: {
-    key: 'StudDepth',
-    label: 'Stud Penetration Depth (mm)',
-    shortLabel: 'Stud Depth (mm)',
-    unit: 'mm',
-    yMin: 6.0,
-    yMax: 15.0,
-    idealMin: 9.5,
-    idealMax: 13.5,
-    idealLabel: 'Target Range: 9.5 – 13.5 mm',
-    highZoneLabel: 'Deeper Penetration / Softer Rootzone (> 13.5 mm)',
-    lowZoneLabel: 'Shallower Penetration / Slip Watch (< 9.5 mm)',
-    significantShiftThreshold: 1.2,
-    highSdThreshold: 1.0,
-    appendixKey: 'StudDepth',
-  },
-  RotationalTorque: {
-    key: 'RotationalTorque',
-    label: 'Rotational Resistance (Nm)',
-    shortLabel: 'Rot. Torque (Nm)',
-    unit: 'Nm',
-    yMin: 30,
-    yMax: 68,
-    idealMin: 35,
-    idealMax: 52,
-    idealLabel: 'Target Range: 35 – 52 Nm',
-    highZoneLabel: 'Higher Rotational Torque Watch (> 52 Nm)',
-    lowZoneLabel: 'Lower Shear Resistance (< 35 Nm)',
-    significantShiftThreshold: 4.0,
-    highSdThreshold: 3.5,
-    appendixKey: 'RotationalTorque',
-  },
-  Boot: {
-    key: 'Boot',
-    label: 'Boot Soleplate Index (0–10)',
-    shortLabel: 'Boot Index',
-    unit: '/10',
-    yMin: 0.5,
-    yMax: 7.5,
-    idealMin: 2.5,
-    idealMax: 5.3,
-    idealLabel: 'Standard FG/Mixed Window: 2.5 – 5.3',
-    highZoneLabel: 'Suggested Short / Conical FG-S Window (> 5.3)',
-    lowZoneLabel: 'Suggested Soft-Ground SG Window (< 2.5)',
-    significantShiftThreshold: 0.75,
-    highSdThreshold: 0.65,
-    appendixKey: 'Boot',
-  },
-  Speed: {
-    key: 'Speed',
-    label: 'Speed Suitability (0–10)',
-    shortLabel: 'Speed',
-    unit: '/10',
-    yMin: 2.5,
-    yMax: 8.0,
-    idealMin: 4.5,
-    idealMax: 6.5,
-    idealLabel: 'Target Window: 4.5 – 6.5',
-    highZoneLabel: 'Fast / Firmer Stiffness (> 6.5)',
-    lowZoneLabel: 'Slower / More Dissipating (< 4.5)',
-    significantShiftThreshold: 0.6,
-    highSdThreshold: 0.5,
-    appendixKey: 'Impact',
-  },
-  Recovery: {
-    key: 'Recovery',
-    label: 'Recovery Suitability (0–10)',
-    shortLabel: 'Recovery',
-    unit: '/10',
-    yMin: 3.5,
-    yMax: 7.5,
-    idealMin: 5.2,
-    idealMax: 6.5,
-    idealLabel: 'Target Recovery Window: 5.2 – 6.5',
-    highZoneLabel: 'Higher Cushion / Rebound (> 6.5)',
-    lowZoneLabel: 'Firmer / Less Forgiving for Recovery (< 5.2)',
-    significantShiftThreshold: 0.5,
-    highSdThreshold: 0.45,
-    appendixKey: 'Impact',
-  },
-  Reaction: {
-    key: 'Reaction',
-    label: 'Reaction Suitability (0–10)',
-    shortLabel: 'Reaction',
-    unit: '/10',
-    yMin: 3.5,
-    yMax: 8.0,
-    idealMin: 5.0,
-    idealMax: 6.8,
-    idealLabel: 'Target Window: 5.0 – 6.8',
-    highZoneLabel: 'High Stiffness & Bite (> 6.8)',
-    lowZoneLabel: 'Muted Reactivity (< 5.0)',
-    significantShiftThreshold: 0.55,
-    highSdThreshold: 0.45,
-    appendixKey: 'Grip',
-  },
-  Metabolic: {
-    key: 'Metabolic',
-    label: 'Metabolic Load Suitability (0–10)',
-    shortLabel: 'Metabolic',
-    unit: '/10',
-    yMin: 4.0,
-    yMax: 8.5,
-    idealMin: 5.5,
-    idealMax: 7.2,
-    idealLabel: 'Target Window: 5.5 – 7.2',
-    highZoneLabel: 'Higher Internal Cost (> 7.2)',
-    lowZoneLabel: 'Lower Metabolic Demand (< 5.5)',
-    significantShiftThreshold: 0.55,
-    highSdThreshold: 0.45,
-    appendixKey: 'Energy',
-  },
-  Power: {
-    key: 'Power',
-    label: 'Power Suitability (0–10)',
-    shortLabel: 'Power',
-    unit: '/10',
-    yMin: 3.5,
-    yMax: 8.5,
-    idealMin: 5.0,
-    idealMax: 7.0,
-    idealLabel: 'Target Window: 5.0 – 7.0',
-    highZoneLabel: 'Higher Force / Traction (> 7.0)',
-    lowZoneLabel: 'More Compliant / Lower Force (< 5.0)',
-    significantShiftThreshold: 0.6,
-    highSdThreshold: 0.5,
-    appendixKey: 'Impact',
-  },
-  Endurance: {
-    key: 'Endurance',
-    label: 'Endurance Suitability (0–10)',
-    shortLabel: 'Endurance',
-    unit: '/10',
-    yMin: 4.0,
-    yMax: 9.0,
-    idealMin: 6.0,
-    idealMax: 7.8,
-    idealLabel: 'Target Window: 6.0 – 7.8',
-    highZoneLabel: 'Higher Aerobic / Softer Turf (> 7.8)',
-    lowZoneLabel: 'Firmer / Faster Surface (< 6.0)',
-    significantShiftThreshold: 0.6,
-    highSdThreshold: 0.5,
-    appendixKey: 'Energy',
-  },
-};
 
 interface ChronologicalPoint {
   key: string;
@@ -341,161 +109,101 @@ interface ChronologicalPoint {
   impactMean: number;
   impactSd: number;
   energyMean: number;
+  energySd: number;
   gripMean: number;
-  hardnessMean: number;
-  studDepthMean: number;
-}
-
-interface LongitudinalTimelineProps {
-  evaluations: PitchEvaluation[];
-  refBaseline?: PitchEvaluation;
-  selectedPrimaryId: string;
-  selectedCompareId: string;
-  onSelectPrimary: (id: string) => void;
-  onSelectCompare: (id: string) => void;
-  onOpenAppendixA?: (metricKey: string) => void;
+  gripSd: number;
 }
 
 function calcMean(vals: number[]): number {
   if (!vals.length) return 0;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
+  return Number((vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2));
 }
 
-function calcSd(vals: number[]): number {
-  if (vals.length <= 1) return 0;
-  const m = calcMean(vals);
-  const variance = vals.reduce((acc, v) => acc + (v - m) ** 2, 0) / vals.length;
-  return Math.sqrt(variance);
+function calcSd(vals: number[], mean: number): number {
+  if (!vals.length) return 0;
+  const variance = vals.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / vals.length;
+  return Number(Math.sqrt(variance).toFixed(2));
 }
 
 export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
   evaluations,
-  refBaseline,
   selectedPrimaryId,
-  selectedCompareId,
+  referenceProfile,
   onSelectPrimary,
   onSelectCompare,
   onOpenAppendixA,
 }) => {
   const allSortedDates = useMemo(() => {
-    const set = new Set(evaluations.map((e) => e.date));
-    return Array.from(set).sort();
+    const set = new Set<string>(evaluations.map((e) => e.date));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [evaluations]);
 
-  // Default to active camp window (Sep 21 -> Oct 6) so pre-camp Sep 2 baseline doesn't compress the daily camp spacing unless requested
-  const defaultStart = allSortedDates.includes('2026-09-21')
-    ? '2026-09-21'
-    : allSortedDates[0] || '2026-09-02';
-  const defaultEnd = allSortedDates[allSortedDates.length - 1] || '2026-10-06';
-
-  const [startDate, setStartDate] = useState<string>(defaultStart);
-  const [endDate, setEndDate] = useState<string>(defaultEnd);
-  const [clinicalLens, setClinicalLens] = useState<ClinicalLensId>('patellar_achilles');
-  const [trendMetric, setTrendMetric] = useState<ProgressionMetricKey>('Impact');
+  // Default to the active USMNT Camp window (Sept 21 -> Oct 6)
+  const [startDate, setStartDate] = useState<string>('2026-09-21');
+  const [endDate, setEndDate] = useState<string>(
+    allSortedDates[allSortedDates.length - 1] || '2026-10-06'
+  );
+  const [clinicalLens, setClinicalLens] = useState<ClinicalLensId>('impact_lens');
+  const [trendMetric, setTrendMetric] = useState<IndexName>('Impact');
   const [aggregationMode, setAggregationMode] = useState<'daily_team' | 'primary_session'>(
     'daily_team'
   );
   const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
-  const [showScienceExplainer, setShowScienceExplainer] = useState<boolean>(true);
+  const [showScienceExplainer, setShowScienceExplainer] = useState<boolean>(false);
 
   const activeLensSpec =
     CLINICAL_LENSES.find((l) => l.id === clinicalLens) || CLINICAL_LENSES[0];
-  const metricCfg = METRIC_CONFIGS[trendMetric];
+  const activePdfSpec =
+    RAW_STADIA_INDEX_SPECS.find((s) => s.index === trendMetric) || RAW_STADIA_INDEX_SPECS[0];
+  const activeRefStats = referenceProfile.metrics[trendMetric];
+
+  const significantShiftThreshold = trendMetric === 'Energy' ? 0.45 : 0.7;
+  const highSdThreshold = trendMetric === 'Energy' ? 0.45 : 0.7;
 
   const handleSelectLens = (lensId: ClinicalLensId) => {
     setClinicalLens(lensId);
     const spec = CLINICAL_LENSES.find((l) => l.id === lensId);
-    if (spec) {
+    if (spec && lensId !== 'triad_overview') {
       setTrendMetric(spec.defaultMetric);
     }
   };
 
-  // Extract metric values for a given evaluation or group of evaluations
-  const extractMetricStats = (evals: PitchEvaluation[], metric: ProgressionMetricKey) => {
-    if (metric === 'Hardness') {
-      const vals: number[] = [];
-      evals.forEach((ev) => {
-        const baseH = ev.hardwareMetrics.hardnessGm;
-        const impMean = ev.averages.Impact;
-        ev.zones.forEach((z) => {
-          vals.push(baseH + (z.metrics.Impact - impMean) * 4.2);
-        });
-      });
-      return {
-        mean: Number(calcMean(vals).toFixed(1)),
-        sd: Number(calcSd(vals).toFixed(1)),
-        min: Number(Math.min(...vals).toFixed(1)),
-        max: Number(Math.max(...vals).toFixed(1)),
-      };
-    }
-
-    if (metric === 'StudDepth') {
-      const vals: number[] = [];
-      evals.forEach((ev) => {
-        const baseS = ev.hardwareMetrics.studDepthMm;
-        const gripMean = ev.averages.Grip;
-        ev.zones.forEach((z) => {
-          vals.push(Math.max(5.5, baseS + (z.metrics.Grip - gripMean) * 0.75));
-        });
-      });
-      return {
-        mean: Number(calcMean(vals).toFixed(2)),
-        sd: Number(calcSd(vals).toFixed(2)),
-        min: Number(Math.min(...vals).toFixed(1)),
-        max: Number(Math.max(...vals).toFixed(1)),
-      };
-    }
-
-    if (metric === 'RotationalTorque') {
-      const vals: number[] = [];
-      evals.forEach((ev) => {
-        const baseT = ev.hardwareMetrics.rotationalResistanceNm;
-        const gripMean = ev.averages.Grip;
-        ev.zones.forEach((z) => {
-          vals.push(baseT + (z.metrics.Grip - gripMean) * 3.8);
-        });
-      });
-      return {
-        mean: Number(calcMean(vals).toFixed(1)),
-        sd: Number(calcSd(vals).toFixed(1)),
-        min: Number(Math.min(...vals).toFixed(1)),
-        max: Number(Math.max(...vals).toFixed(1)),
-      };
-    }
-
-    // Standard 0-10 IndexName across all 18-zone measurements
-    const zoneVals = evals.flatMap((ev) => ev.zones.map((z) => z.metrics[metric]));
-    return {
-      mean: Number(calcMean(zoneVals).toFixed(2)),
-      sd: Number(calcSd(zoneVals).toFixed(2)),
-      min: Number(Math.min(...zoneVals).toFixed(2)),
-      max: Number(Math.max(...zoneVals).toFixed(2)),
-    };
-  };
-
-  // Build chronological points independent of individual field lines
-  const chronologicalPoints: ChronologicalPoint[] = useMemo(() => {
+  // Build chronological points within [startDate, endDate]
+  const chronologicalPoints = useMemo<ChronologicalPoint[]>(() => {
     const filteredDates = allSortedDates.filter((d) => d >= startDate && d <= endDate);
+
+    const pickRepresentativeEval = (evalsOnDate: PitchEvaluation[]): PitchEvaluation => {
+      if (evalsOnDate.length === 1) return evalsOnDate[0];
+      const matchPitch = evalsOnDate.find((e) => !e.pitchName.startsWith('USSF Super'));
+      if (matchPitch) return matchPitch;
+      const super4 = evalsOnDate.find((e) => e.pitchName === 'USSF Super 4');
+      if (super4) return super4;
+      const super5 = evalsOnDate.find((e) => e.pitchName === 'USSF Super 5');
+      if (super5) return super5;
+      return evalsOnDate[0];
+    };
+
+    const getMetricValuesForEvals = (
+      evalsToUse: PitchEvaluation[],
+      mKey: IndexName
+    ): { mean: number; sd: number; min: number; max: number } => {
+      const zoneVals = evalsToUse.flatMap((ev) => ev.zones.map((z) => z.metrics[mKey]));
+      const mean = calcMean(zoneVals);
+      const sd = calcSd(zoneVals, mean);
+      const min = Number(Math.min(...zoneVals).toFixed(2));
+      const max = Number(Math.max(...zoneVals).toFixed(2));
+      return { mean, sd, min, max };
+    };
 
     const rawPoints = filteredDates.map((date) => {
       const dateEvals = evaluations.filter((e) => e.date === date);
+      const repEval = pickRepresentativeEval(dateEvals);
+      const evalsForStats = aggregationMode === 'daily_team' ? dateEvals : [repEval];
 
-      const repEval =
-        dateEvals.find((e) => !e.pitchName.startsWith('USSF Super')) ||
-        dateEvals.find((e) => e.id === selectedPrimaryId) ||
-        dateEvals.find(
-          (e) => e.pitchName === 'USSF Super 4' && (date === '2026-09-21' || date === '2026-09-22')
-        ) ||
-        dateEvals.find((e) => e.pitchName === 'USSF Super 5') ||
-        dateEvals[0];
-
-      const activeEvals = aggregationMode === 'daily_team' ? dateEvals : [repEval];
-      const stats = extractMetricStats(activeEvals, trendMetric);
-      const impactStats = extractMetricStats(activeEvals, 'Impact');
-      const energyStats = extractMetricStats(activeEvals, 'Energy');
-      const gripStats = extractMetricStats(activeEvals, 'Grip');
-      const hardnessStats = extractMetricStats(activeEvals, 'Hardness');
-      const studStats = extractMetricStats(activeEvals, 'StudDepth');
+      const stats = getMetricValuesForEvals(evalsForStats, trendMetric);
+      const impactStats = getMetricValuesForEvals(evalsForStats, 'Impact');
+      const energyStats = getMetricValuesForEvals(evalsForStats, 'Energy');
+      const gripStats = getMetricValuesForEvals(evalsForStats, 'Grip');
 
       const isStadium = dateEvals.some((e) => !e.pitchName.startsWith('USSF Super'));
       const isMatchDay = isStadium && repEval.pitchName.includes('(MD)');
@@ -540,9 +248,9 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         impactMean: impactStats.mean,
         impactSd: impactStats.sd,
         energyMean: energyStats.mean,
+        energySd: energyStats.sd,
         gripMean: gripStats.mean,
-        hardnessMean: hardnessStats.mean,
-        studDepthMean: studStats.mean,
+        gripSd: gripStats.sd,
       };
     });
 
@@ -553,15 +261,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     }));
   }, [allSortedDates, startDate, endDate, evaluations, aggregationMode, trendMetric, selectedPrimaryId]);
 
-  const refValue = useMemo(() => {
-    if (!refBaseline) return null;
-    if (trendMetric === 'Hardness') return refBaseline.hardwareMetrics.hardnessGm;
-    if (trendMetric === 'StudDepth') return refBaseline.hardwareMetrics.studDepthMm;
-    if (trendMetric === 'RotationalTorque')
-      return refBaseline.hardwareMetrics.rotationalResistanceNm;
-    return refBaseline.averages[trendMetric];
-  }, [refBaseline, trendMetric]);
-
   // Summary diagnostics across the filtered date window
   const windowDiagnostics = useMemo(() => {
     if (chronologicalPoints.length === 0) return null;
@@ -570,10 +269,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     const avgSd = calcMean(chronologicalPoints.map((p) => p.sd));
 
     const outsideIdealPts = chronologicalPoints.filter(
-      (p) => p.mean < metricCfg.idealMin || p.mean > metricCfg.idealMax
+      (p) => p.mean < activeRefStats.bandLow || p.mean > activeRefStats.bandHigh
     );
-    const aboveIdealPts = chronologicalPoints.filter((p) => p.mean > metricCfg.idealMax);
-    const belowIdealPts = chronologicalPoints.filter((p) => p.mean < metricCfg.idealMin);
 
     let maxShiftPt = chronologicalPoints[0];
     let prevOfMaxShift = chronologicalPoints[0];
@@ -593,13 +290,11 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       overallMean,
       avgSd,
       outsideIdealCount: outsideIdealPts.length,
-      aboveIdealCount: aboveIdealPts.length,
-      belowIdealCount: belowIdealPts.length,
       maxShiftPt,
       prevOfMaxShift,
       maxSdPt,
     };
-  }, [chronologicalPoints, metricCfg]);
+  }, [chronologicalPoints, activeRefStats]);
 
   const inspectedPoint = useMemo(() => {
     if (!chronologicalPoints.length) return null;
@@ -613,7 +308,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     );
   }, [chronologicalPoints, selectedPointKey, windowDiagnostics]);
 
-  // SVG Chart Geometry
+  // SVG Chart Geometry (0–10 Raw Stadia Scale)
   const w = 940;
   const h = 340;
   const padL = 64;
@@ -622,6 +317,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
   const padB = 64;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
+  const yMin = 1.0;
+  const yMax = 9.5;
 
   const getX = (idx: number) => {
     if (chronologicalPoints.length <= 1) return padL + plotW / 2;
@@ -629,12 +326,12 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
   };
 
   const getY = (val: number) => {
-    const clamped = Math.max(metricCfg.yMin, Math.min(metricCfg.yMax, val));
-    return padT + (1 - (clamped - metricCfg.yMin) / (metricCfg.yMax - metricCfg.yMin)) * plotH;
+    const clamped = Math.max(yMin, Math.min(yMax, val));
+    return padT + (1 - (clamped - yMin) / (yMax - yMin)) * plotH;
   };
 
-  const idealTopY = getY(metricCfg.idealMax);
-  const idealBottomY = getY(metricCfg.idealMin);
+  const idealTopY = getY(activeRefStats.bandHigh);
+  const idealBottomY = getY(activeRefStats.bandLow);
   const idealBandH = Math.max(2, idealBottomY - idealTopY);
 
   // Build +/- 1 SD Variance Ribbon Polygon points
@@ -650,70 +347,30 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         return `${getX(origIdx).toFixed(1)},${getY(p.mean - p.sd).toFixed(1)}`;
       });
     return [...upper, ...lower].join(' ');
-  }, [chronologicalPoints, metricCfg]);
+  }, [chronologicalPoints]);
 
-  // Y-axis tick values
-  const yTicks = useMemo(() => {
-    const span = metricCfg.yMax - metricCfg.yMin;
-    const step = span > 25 ? 10 : span > 10 ? 2 : 1;
-    const first = Math.ceil(metricCfg.yMin / step) * step;
-    const ticks: number[] = [];
-    for (let v = first; v <= metricCfg.yMax; v += step) {
-      ticks.push(Number(v.toFixed(1)));
-    }
-    return ticks;
-  }, [metricCfg]);
+  const yTicks = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const formatVal = (v: number) => v.toFixed(2);
 
-  const formatVal = (v: number) =>
-    metricCfg.unit === 'Gm' || metricCfg.unit === 'Nm' ? v.toFixed(1) : v.toFixed(2);
-
-  // Evaluate suggested contextual status for any chronological point
+  // Evaluate contextual status for any chronological point against the active Reference Band
   const getPointClinicalStatus = (pt: ChronologicalPoint) => {
-    if (trendMetric === 'StudDepth') {
-      if (pt.mean < metricCfg.idealMin) {
-        return {
-          status: 'overload' as const,
-          color: '#DA291C',
-          badgeBg: 'bg-red-50 text-[#DA291C] border-red-300',
-          label: 'Suggested Watch: Shallower Penetration (< 9.5 mm) — Slip / Adductor Context',
-        };
-      }
-      if (pt.mean > metricCfg.idealMax) {
-        return {
-          status: 'caution' as const,
-          color: '#D97706',
-          badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
-          label: 'Suggested Watch: Deeper Penetration (> 13.5 mm) — Softer Turf',
-        };
-      }
-    } else {
-      if (pt.mean > metricCfg.idealMax) {
-        return {
-          status: 'overload' as const,
-          color: '#DA291C',
-          badgeBg: 'bg-red-50 text-[#DA291C] border-red-300',
-          label:
-            trendMetric === 'Impact' || trendMetric === 'Hardness'
-              ? 'Above Target Window — Suggested Watch: Firm Surface / Tendon Load'
-              : trendMetric === 'Grip' || trendMetric === 'RotationalTorque'
-              ? 'Above Target Window — Suggested Watch: Higher Rotational Fixation'
-              : 'Above Suggested Target Window',
-        };
-      }
-      if (pt.mean < metricCfg.idealMin) {
-        return {
-          status: 'caution' as const,
-          color: '#D97706',
-          badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
-          label:
-            trendMetric === 'Impact' || trendMetric === 'Energy'
-              ? 'Below Target Window — Suggested Watch: Compliant / Higher Muscular Work'
-              : 'Below Suggested Target Window',
-        };
-      }
+    if (pt.mean > activeRefStats.bandHigh) {
+      return {
+        status: 'overload' as const,
+        color: '#DA291C',
+        badgeBg: 'bg-red-50 text-[#DA291C] border-red-300',
+        label: `Above Reference Band (${activePdfSpec.rightSpectrum.title} • Watch: ${activePdfSpec.rightSpectrum.suggestedInjuryWatch})`,
+      };
     }
-
-    if (pt.sd >= metricCfg.highSdThreshold) {
+    if (pt.mean < activeRefStats.bandLow) {
+      return {
+        status: 'caution' as const,
+        color: '#D97706',
+        badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
+        label: `Below Reference Band (${activePdfSpec.leftSpectrum.title} • Watch: ${activePdfSpec.leftSpectrum.suggestedInjuryWatch})`,
+      };
+    }
+    if (pt.sd >= highSdThreshold) {
       return {
         status: 'variance' as const,
         color: '#D97706',
@@ -721,19 +378,18 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         label: `Suggested Watch: Higher Spatial Variance (±${formatVal(pt.sd)} SD Across Zones)`,
       };
     }
-
     return {
       status: 'optimal' as const,
       color: '#001489',
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-      label: 'Within Suggested Target Window',
+      label: `Within Reference Band ([${activeRefStats.bandLow.toFixed(2)}–${activeRefStats.bandHigh.toFixed(2)}])`,
     };
   };
 
   return (
     <div className="space-y-6">
       {/* ===================================================================
-          1. TOP FILTER BAR: DATE RANGE FILTER + SUGGESTED CLINICAL LENS
+          1. TOP FILTER BAR: DATE RANGE FILTER + PDF SPECTRUM LENS
           =================================================================== */}
       <div
         className="bg-white border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[10px] p-5 space-y-4"
@@ -744,7 +400,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             <div className="flex flex-wrap items-center gap-2.5">
               <TrendingUp className="w-5 h-5 text-[#C69214]" />
               <h2 className="text-lg font-extrabold text-[#2E3440]">
-                Camp Surface Progression &amp; Contextual Load Inspector
+                Camp Surface Progression &amp; Spectrum Inspector (Impact • Energy • Grip)
               </h2>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2.5 py-0.5 rounded-full bg-amber-50 text-[#92400E] border border-amber-300">
                 Suggested Decision-Support • Non-Absolute
@@ -752,8 +408,12 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             </div>
             <p className="text-xs text-[#64748B] font-medium mt-0.5">
               Field-independent chronological exposure tracking (<strong className="text-[#2E3440]">Mean ± 1 SD</strong>{' '}
-              variance over time) against the <strong className="text-emerald-700">Suggested Target Range</strong> and{' '}
-              <strong className="text-purple-700">Reference Baseline</strong> to help contextualize player feedback and chronic tissue management.
+              across 18 zones) against the active{' '}
+              <strong className="text-emerald-700">
+                Reference Band ({referenceProfile.label}: [{activeRefStats.bandLow.toFixed(2)}–
+                {activeRefStats.bandHigh.toFixed(2)}])
+              </strong>{' '}
+              and <strong className="text-purple-700">REF Mean ({activeRefStats.mean.toFixed(2)})</strong>.
             </p>
           </div>
 
@@ -831,13 +491,13 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           </div>
         </div>
 
-        {/* Suggested Clinical Context / Tissue Watch-Area Selector */}
+        {/* Suggested PDF Spectrum & Clinical Context Lens Selector */}
         <div className="space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#434C5E] flex items-center gap-1.5">
                 <Activity className="w-3.5 h-3.5 text-[#C69214]" />
-                1. Select Suggested Clinical Context / Tissue Watch-Area (Exploratory Lens):
+                1. Select Playing Surface Index Spectrum Lens (Exploratory Context):
               </span>
               <button
                 type="button"
@@ -845,7 +505,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-extrabold bg-[#EFF6FF] text-[#001489] border border-[#BFDBFE] hover:border-[#001489] transition-all"
               >
                 <BookOpen className="w-3.5 h-3.5 text-[#C69214]" />
-                {showScienceExplainer ? 'Hide Science & Evidence Explainer' : 'View Science & Evidence Explainer'}
+                {showScienceExplainer ? 'Hide Science & Reference Methodology' : 'View Science & Reference Methodology'}
                 {showScienceExplainer ? (
                   <ChevronUp className="w-3.5 h-3.5" />
                 ) : (
@@ -883,7 +543,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {CLINICAL_LENSES.map((lens) => {
               const isSelected = clinicalLens === lens.id;
               return (
@@ -906,7 +566,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     </div>
                   </div>
                   <div className="mt-2 pt-1.5 border-t border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono font-bold text-[#001489]">
-                    <span>Default Metric: {METRIC_CONFIGS[lens.defaultMetric].shortLabel}</span>
+                    <span>Active Index: {lens.defaultMetric}</span>
                     <span>→</span>
                   </div>
                 </button>
@@ -917,7 +577,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       </div>
 
       {/* ===================================================================
-          1B. SCIENTIFIC EVIDENCE & THEORETICAL FRAMEWORK EXPLAINER
+          1B. SCIENTIFIC EVIDENCE & EMPIRICAL REFERENCE RANGE EXPLAINER
           =================================================================== */}
       {showScienceExplainer && (
         <div
@@ -929,18 +589,19 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               <div className="flex flex-wrap items-center gap-2">
                 <BookOpen className="w-4 h-4 text-[#001489]" />
                 <h3 className="text-sm font-extrabold uppercase tracking-[0.05em] text-[#001489]">
-                  Scientific Basis &amp; Interpretation Guide: Surface-to-Tissue Associations
+                  Scientific Basis &amp; Reference Range Methodology: Impact • Energy • Grip
                 </h3>
                 <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
                   Suggested Context • Not Deterministic
                 </span>
               </div>
               <p className="text-xs text-[#434C5E] font-medium leading-relaxed max-w-4xl">
-                <strong className="text-[#2E3440]">How to interpret these recommendations:</strong>{' '}
-                Associating mechanical pitch metrics with specific anatomical structures (tendons, calves/hamstrings, knee/ankle joints, adductors) combines{' '}
-                <strong>direct mechanical testing</strong> with <strong>established sports biomechanics principles</strong>, bridged by{' '}
-                <strong>operational heuristics</strong>. Because athlete soreness and injury risk are multifactorial—depending on prior pathology, acute/chronic workload, footwear, and movement strategy—all tissue associations and guidance in this tool are presented as{' '}
-                <strong className="text-[#001489]">suggested considerations to guide clinical discussion, never as absolute rules or standalone injury predictors.</strong>
+                <strong className="text-[#2E3440]">How this dashboard is constructed:</strong>{' '}
+                All metrics come strictly from the 3 Raw Stadia Playing Surface Indexes (<strong>Impact</strong>,{' '}
+                <strong>Energy</strong>, and <strong>Grip</strong>) measured across 18 zones per pitch. Instead of arbitrary cutoffs, the{' '}
+                <strong className="text-purple-700">Purple REF Line</strong> and{' '}
+                <strong className="text-emerald-700">Shaded Green Reference Band</strong> are computed directly from your empirical camp distribution (<strong className="font-mono">Mean ± 1 SD</strong>). All tissue watch tags from the Raw Stadia PDF are presented as{' '}
+                <strong className="text-[#001489]">suggested considerations to guide clinical discussion, never as deterministic rules.</strong>
               </p>
             </div>
             <button
@@ -954,32 +615,35 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
 
           {/* 3-Tier Scientific Transparency Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Tier 1: Direct Mechanical Measurement */}
+            {/* Tier 1: Raw Stadia 3 Core Indexes */}
             <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    Tier 1 • Direct Sensor Physics
+                    Tier 1 • 18-Zone Empirical Data
                   </span>
                   <Microscope className="w-4 h-4 text-emerald-700" />
                 </div>
                 <h4 className="text-xs font-black text-[#2E3440]">
-                  What Is Directly Measured on the Pitch
+                  The 3 Raw Stadia Playing Surface Indexes (0–10)
                 </h4>
                 <p className="text-[11px] text-[#434C5E] leading-relaxed">
-                  Each pitch evaluation samples <strong>18 standardized zones</strong> using two mechanical test rigs modeled on FIFA Quality Programme standards:
+                  Each pitch evaluation samples <strong>18 standardized zones</strong> (3 width rows × 6 length columns) across three core mechanical indexes:
                 </p>
                 <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
                   <li>
-                    <strong>RAA (Raw Artificial Athlete):</strong> Drops a 20 kg mass onto a spring-loaded test foot to directly quantify peak deceleration (<strong>Hardness in Gm</strong>), vertical deformation (<strong>Shock Absorption %</strong>), and rebound (<strong>Energy Restitution %</strong>).
+                    <strong>Impact (0–10):</strong> Shock Absorption &amp; Vertical Deformation (<em>Soft Field ↔ Hard Field</em>).
                   </li>
                   <li>
-                    <strong>RTT (Raw Traction Tester):</strong> Applies 46 kg vertical load to a 6-stud test foot to directly record peak shear release torque (<strong>Rotational Resistance in Nm</strong>) and cleat sinkage (<strong>Stud Penetration Depth in mm</strong>).
+                    <strong>Energy (0–10):</strong> Energy Restitution (<em>Dissipating Field ↔ Rebounding Field</em>).
+                  </li>
+                  <li>
+                    <strong>Grip (0–10):</strong> Rotational Traction (<em>Low Traction Field ↔ High Traction Field</em>).
                   </li>
                 </ul>
               </div>
               <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[10px] font-bold text-emerald-800">
-                Confidence: High (Empirical mechanical ground truth across 18 pitch zones)
+                Source: US Soccer × Raw Stadia 18-Zone Dataset &amp; Indexes PDF
               </div>
             </div>
 
@@ -993,51 +657,51 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                   <Scale className="w-4 h-4 text-[#001489]" />
                 </div>
                 <h4 className="text-xs font-black text-[#2E3440]">
-                  What Sports Science Literature Supports
+                  Why the Spectrum Endpoints Matter Biomechanically
                 </h4>
                 <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
                   <li>
-                    <strong>Surface Stiffness &amp; Leg/Tendon Tuning:</strong> Athletes adjust leg stiffness (<span className="font-mono">k_leg</span>) inversely to surface stiffness (<span className="font-mono">k_surface</span>) (<em>Ferris &amp; Farley, 1997; Kerdok et al., 2002</em>). Firmer pitches shorten time-to-peak vertical ground reaction force (vGRF) during braking, and rapid surface transitions can challenge tendon accommodation (<em>Rennie et al., 2016</em>).
+                    <strong>Soft vs. Hard Surface Stiffness:</strong> Athletes tune leg stiffness inversely to surface stiffness (<em>Ferris &amp; Farley, 1997; Kerdok et al., 2002</em>). Harder fields shorten braking attenuation time (Tendons | Joints), whereas softer fields increase surface deformation (Muscles | Ligaments).
                   </li>
                   <li>
-                    <strong>Compliant Turf &amp; Muscular/Metabolic Work:</strong> Softer, energy-absorbing turf increases ground contact time and surface deformation, elevating oxygen cost (<span className="font-mono">VO2</span>), blood lactate, and perceived lower-limb exertion at matched running speeds (<em>Pinnington &amp; Dawson, 2001; Gaudino et al., 2013</em>).
+                    <strong>Dissipating vs. Rebounding Turf:</strong> Energy-dissipating surfaces increase ground contact time and oxygen/muscular cost at matched running speeds (<em>Pinnington &amp; Dawson, 2001; Gaudino et al., 2013</em>).
                   </li>
                   <li>
-                    <strong>Rotational Fixation &amp; Joint Torque:</strong> High shoe-surface rotational traction and bladed cleat lock increase peak transverse-plane moments at the ankle and knee during cutting (<em>Torg et al., 1974; Villwock et al., 2009; Wannop et al., 2013</em>).
+                    <strong>Low vs. High Rotational Traction:</strong> High rotational resistance increases peak transverse-plane moments at the ankle and knee during cutting (<em>Villwock et al., 2009; Wannop et al., 2013</em>), while low traction elevates slip risk.
                   </li>
                 </ul>
               </div>
               <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[10px] font-bold text-[#001489]">
-                Confidence: Well-established physiological &amp; biomechanical directional mechanisms
+                Confidence: Well-established directional biomechanical mechanisms
               </div>
             </div>
 
-            {/* Tier 3: Suggested Operational Heuristics */}
+            {/* Tier 3: Empirical Reference Band (Mean +/- 1 SD) */}
             <div className="bg-[#FEF3C7]/35 border border-[#FDE68A] rounded-[8px] p-4 flex flex-col justify-between">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-amber-100 text-[#92400E] border border-amber-300">
-                    Tier 3 • Suggested Practitioner Heuristics
+                    Tier 3 • Empirical Reference Band
                   </span>
                   <Compass className="w-4 h-4 text-[#92400E]" />
                 </div>
                 <h4 className="text-xs font-black text-[#2E3440]">
-                  What Is Suggested Context (Not Absolute)
+                  How Reference Ranges Are Estimated (Mean ± 1 SD)
                 </h4>
                 <p className="text-[11px] text-[#434C5E] leading-relaxed">
-                  Because mechanical devices drop or rotate rigid weights vertically and horizontally—whereas players adapt neuromusculoskeletal strategy dynamically—specific numeric cutoffs and clinical labels are <strong>practical heuristics</strong>:
+                  Rather than inventing arbitrary thresholds, the Y-axis reference band is calculated directly from the empirical zone distribution of your selected baseline:
                 </p>
                 <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
                   <li>
-                    <strong>Target Windows &amp; Shift Thresholds:</strong> Ranges like Impact <span className="font-mono">4.0–6.0</span>, Grip <span className="font-mono">5.5–7.2</span>, day-to-day shift <span className="font-mono">Δ ≥ 0.75</span>, or zone spread <span className="font-mono">SD ≥ 0.65</span> serve as reference guideposts rather than rigid pass/fail boundaries.
+                    <strong>NTC Training Baseline (Default):</strong> Pooled across all NTC training sessions (<span className="font-mono">Impact: 4.33 ± 0.68 [3.65–5.01]</span>, <span className="font-mono">Energy: 3.98 ± 0.38 [3.60–4.36]</span>, <span className="font-mono">Grip: 6.24 ± 0.89 [5.35–7.13]</span>).
                   </li>
                   <li>
-                    <strong>Tissue Labels &amp; Footwear Suggestions:</strong> Mapping a metric to a single tissue (e.g., patellar tendon vs. calf vs. adductor) or suggesting a soleplate (<span className="font-mono">FG-S</span> vs. <span className="font-mono">SG</span>) is intended to <strong>prompt informed staff conversation</strong> alongside player comfort and medical history.
+                    <strong>How to Read Z-Score Deviations:</strong> Sessions above <span className="font-mono">+1 SD</span> shift toward the right-hand PDF spectrum (Hard / Rebounding / High Traction); sessions below <span className="font-mono">−1 SD</span> shift toward the left-hand spectrum (Soft / Dissipating / Low Traction).
                   </li>
                 </ul>
               </div>
               <div className="mt-3 pt-2 border-t border-[#FDE68A] text-[10px] font-bold text-[#92400E]">
-                Application: Use as a contextual lens alongside medical &amp; coaching judgment
+                Application: Use as a contextual guidepost alongside clinical &amp; coaching judgment
               </div>
             </div>
           </div>
@@ -1045,15 +709,15 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       )}
 
       {/* ===================================================================
-          2. 4-CARD CAMP EXPOSURE & BIOMECHANICAL DIAGNOSTIC SUMMARY STRIP
+          2. 4-CARD CAMP EXPOSURE & SPECTRUM DIAGNOSTIC SUMMARY STRIP
           =================================================================== */}
       {windowDiagnostics && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {/* Card 1: Window Mean ± SD vs Suggested Target Range */}
+          {/* Card 1: Window Mean ± SD vs Active Reference Band */}
           <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-4 flex flex-col justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] block">
-                Camp Window Exposure ({chronologicalPoints.length} Days)
+                Camp Window Exposure ({chronologicalPoints.length} Days) • {trendMetric}
               </span>
               <div className="flex items-baseline gap-2 mt-1 font-mono">
                 <span className="text-2xl font-black text-[#001489]">
@@ -1065,7 +729,9 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </div>
             </div>
             <div className="mt-3 pt-2.5 border-t border-[#E5E9F0] flex items-center justify-between text-xs">
-              <span className="font-bold text-emerald-800">{metricCfg.idealLabel}</span>
+              <span className="font-bold text-emerald-800 font-mono">
+                REF Band: [{activeRefStats.bandLow.toFixed(2)}–{activeRefStats.bandHigh.toFixed(2)}]
+              </span>
               <span
                 className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${
                   windowDiagnostics.outsideIdealCount > 0
@@ -1073,7 +739,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 }`}
               >
-                {windowDiagnostics.outsideIdealCount} of {chronologicalPoints.length} Days Outside Window
+                {windowDiagnostics.outsideIdealCount} of {chronologicalPoints.length} Days Outside ±1 SD
               </span>
             </div>
           </div>
@@ -1094,7 +760,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                   {(windowDiagnostics.maxShiftPt.deltaFromPrev || 0) > 0
                     ? `+${formatVal(windowDiagnostics.maxShiftPt.deltaFromPrev || 0)}`
                     : formatVal(windowDiagnostics.maxShiftPt.deltaFromPrev || 0)}{' '}
-                  {metricCfg.shortLabel}
+                  {trendMetric}
                 </span>
                 <span className="text-xs font-bold text-[#64748B]">
                   ({formatVal(windowDiagnostics.prevOfMaxShift.mean)} →{' '}
@@ -1103,7 +769,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </div>
             </div>
             <div className="mt-2 pt-2 border-t border-[#E5E9F0] text-[11px] text-[#434C5E] font-medium">
-              Steeper day-to-day transitions may reduce tissue accommodation time and warrant closer soreness monitoring.
+              Steeper day-to-day surface transitions may warrant closer soreness monitoring.
             </div>
           </div>
 
@@ -1122,7 +788,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                   ±{formatVal(windowDiagnostics.maxSdPt.sd)} SD
                 </span>
                 <span className="text-xs font-bold text-[#64748B]">
-                  (Zone Range: {formatVal(windowDiagnostics.maxSdPt.min)} –{' '}
+                  (18-Zone Range: {formatVal(windowDiagnostics.maxSdPt.min)} –{' '}
                   {formatVal(windowDiagnostics.maxSdPt.max)})
                 </span>
               </div>
@@ -1132,40 +798,41 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             </div>
           </div>
 
-          {/* Card 4: Active Suggested Theoretical Mechanism */}
+          {/* Card 4: Active Raw Stadia PDF Spectrum Context */}
           <div className="bg-[#EFF6FF]/75 border border-[#BFDBFE] rounded-[10px] p-4 flex flex-col justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#001489] block">
-                Theoretical Mechanism • {activeLensSpec.title}
+                Raw Stadia PDF Spectrum • {activePdfSpec.index}
               </span>
               <p className="text-[11px] text-[#2E3440] font-semibold mt-1 leading-relaxed">
                 {activeLensSpec.mechanismSummary}
               </p>
             </div>
             <div className="mt-2 pt-2 border-t border-[#BFDBFE] text-[10px] font-bold text-[#001489]">
-              {activeLensSpec.pathologyFocus}
+              {activeLensSpec.spectrumSummary}
             </div>
           </div>
         </div>
       )}
 
       {/* ===================================================================
-          3. MAIN TIME-SERIES PROGRESSION CHART (MEAN ± 1 SD + Y-AXIS TARGET RANGE)
+          3. MAIN TIME-SERIES PROGRESSION CHART (MEAN ± 1 SD + Y-AXIS REF BAND)
           =================================================================== */}
       <div
         className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
         style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
       >
-        {/* Chart Header & Metric Selector */}
+        {/* Chart Header & 3 Core Index Selector */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-[#E5E9F0]">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-extrabold text-[#2E3440]">
-                Chronological Team Exposure — {metricCfg.label} (Mean ± 1 SD &amp; Target Window)
+                Chronological Team Exposure — {activePdfSpec.index} Index (0–10) •{' '}
+                {activePdfSpec.mechanicalProperty}
               </h3>
               {onOpenAppendixA && (
                 <MetricInfoTrigger
-                  metricKey={metricCfg.appendixKey}
+                  metricKey={trendMetric}
                   onOpenModal={onOpenAppendixA}
                 />
               )}
@@ -1173,41 +840,39 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             <p className="text-xs text-[#64748B] font-medium mt-0.5">
               Each point displays the <strong className="text-[#2E3440]">Session Mean</strong>, vertical{' '}
               <strong className="text-[#001489]">±1 SD error bar</strong>, shaded variance envelope, and{' '}
-              <strong className="text-emerald-700">Suggested Target Window ({metricCfg.idealMin}–{metricCfg.idealMax})</strong>.
+              <strong className="text-emerald-700">
+                Reference Band ({referenceProfile.shortLabel}: {activeRefStats.bandLow.toFixed(2)}–
+                {activeRefStats.bandHigh.toFixed(2)})
+              </strong>.
               Click any date point to inspect its session details and suggested considerations.
             </p>
           </div>
 
-          {/* Metric Selector Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(
-              [
-                'Impact',
-                'Hardness',
-                'Energy',
-                'Grip',
-                'StudDepth',
-                'RotationalTorque',
-                'Speed',
-                'Recovery',
-                'Reaction',
-                'Metabolic',
-              ] as ProgressionMetricKey[]
-            ).map((mKey) => {
-              const cfg = METRIC_CONFIGS[mKey];
+          {/* 3 Core Playing Surface Index Selector Pills */}
+          <div className="flex flex-wrap items-center gap-2">
+            {CORE_INDEX_NAMES.map((mKey) => {
               const isAct = trendMetric === mKey;
+              const spec = RAW_STADIA_INDEX_SPECS.find((s) => s.index === mKey)!;
               return (
                 <button
                   key={mKey}
                   type="button"
                   onClick={() => setTrendMetric(mKey)}
-                  className={`px-2.5 py-1 rounded-[6px] text-xs border transition-all ${
+                  className={`px-3 py-1.5 rounded-[7px] text-xs border transition-all flex items-center gap-1.5 ${
                     isAct
                       ? 'bg-[#001489] text-white border-[#C69214] font-extrabold shadow-sm'
-                      : 'bg-[#F8F9FA] text-[#434C5E] border-[#CBD5E1] font-semibold hover:border-[#C69214]'
+                      : 'bg-[#F8F9FA] text-[#434C5E] border-[#CBD5E1] font-bold hover:border-[#C69214]'
                   }`}
                 >
-                  {cfg.shortLabel}
+                  <span>{mKey}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded ${
+                      isAct ? 'bg-white/15 text-amber-200' : 'text-[#64748B]'
+                    }`}
+                  >
+                    ({spec.leftSpectrum.title.replace(' FIELD', '')} ↔{' '}
+                    {spec.rightSpectrum.title.replace(' FIELD', '')})
+                  </span>
                 </button>
               );
             })}
@@ -1217,7 +882,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         {/* SVG Chart Container */}
         <div className="w-full overflow-x-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-3">
           <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto min-w-[740px]">
-            {/* 1. Upper Watch Zone (Above Target Max) */}
+            {/* 1. Upper Spectrum Zone (Above Reference Band High) */}
             {idealTopY > padT && (
               <g>
                 <rect
@@ -1233,12 +898,13 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                   textAnchor="end"
                   className="fill-[#DA291C] text-[10px] font-extrabold uppercase tracking-wider"
                 >
-                  ↑ {metricCfg.highZoneLabel}
+                  ↑ {activePdfSpec.rightSpectrum.title} ({activePdfSpec.rightSpectrum.subtitle} • Watch:{' '}
+                  {activePdfSpec.rightSpectrum.suggestedInjuryWatch})
                 </text>
               </g>
             )}
 
-            {/* 2. Shaded Green Suggested Target / Reference Range Band on Y-Axis */}
+            {/* 2. Shaded Green Reference Band (Mean +/- 1 SD) on Y-Axis */}
             <g>
               <rect
                 x={padL}
@@ -1250,11 +916,11 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 strokeWidth="1.2"
                 strokeDasharray="5 3"
               />
-              {/* Target Range Label Badge on Left Y-Axis */}
+              {/* Reference Range Label Badge on Left Y-Axis */}
               <rect
                 x={padL + 8}
                 y={idealTopY + 6}
-                width={168}
+                width={235}
                 height={18}
                 rx={4}
                 fill="#ECFDF5"
@@ -1266,11 +932,12 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 y={idealTopY + 18}
                 className="fill-emerald-900 text-[10px] font-extrabold"
               >
-                ✓ {metricCfg.idealLabel}
+                ✓ REF Band ({referenceProfile.shortLabel}): {activeRefStats.bandLow.toFixed(2)} –{' '}
+                {activeRefStats.bandHigh.toFixed(2)}
               </text>
             </g>
 
-            {/* 3. Lower Compliant / Watch Zone (Below Target Min) */}
+            {/* 3. Lower Spectrum Zone (Below Reference Band Low) */}
             {idealBottomY < h - padB && (
               <g>
                 <rect
@@ -1286,7 +953,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                   textAnchor="end"
                   className="fill-amber-800 text-[10px] font-extrabold uppercase tracking-wider"
                 >
-                  ↓ {metricCfg.lowZoneLabel}
+                  ↓ {activePdfSpec.leftSpectrum.title} ({activePdfSpec.leftSpectrum.subtitle} • Watch:{' '}
+                  {activePdfSpec.leftSpectrum.suggestedInjuryWatch})
                 </text>
               </g>
             )}
@@ -1317,8 +985,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               );
             })}
 
-            {/* Explicitly label Target Min and Target Max on the Left Y-Axis */}
-            {[metricCfg.idealMin, metricCfg.idealMax].map((iv) => {
+            {/* Explicitly label Reference Band Low and High on the Left Y-Axis */}
+            {[activeRefStats.bandLow, activeRefStats.bandHigh].map((iv) => {
               const y = getY(iv);
               return (
                 <g key={`ideal-${iv}`}>
@@ -1326,46 +994,44 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     x={padL - 10}
                     y={y + 3}
                     textAnchor="end"
-                    className="fill-emerald-700 text-[10px] font-mono font-black"
+                    className="fill-emerald-700 text-[9.5px] font-mono font-black"
                   >
-                    {iv}
+                    {iv.toFixed(2)}
                   </text>
                 </g>
               );
             })}
 
-            {/* 5. Horizontal Dashed Purple REF Baseline Line */}
-            {refValue !== null && (
-              <g>
-                <line
-                  x1={padL}
-                  y1={getY(refValue)}
-                  x2={w - padR}
-                  y2={getY(refValue)}
-                  stroke="#7C3AED"
-                  strokeWidth="2"
-                  strokeDasharray="6 4"
-                />
-                <rect
-                  x={w - padR - 92}
-                  y={getY(refValue) - 10}
-                  width={86}
-                  height={18}
-                  rx={4}
-                  fill="#F5F3FF"
-                  stroke="#7C3AED"
-                  strokeWidth="1.2"
-                />
-                <text
-                  x={w - padR - 49}
-                  y={getY(refValue) + 2}
-                  textAnchor="middle"
-                  className="fill-purple-800 text-[10px] font-mono font-extrabold"
-                >
-                  REF: {formatVal(refValue)}
-                </text>
-              </g>
-            )}
+            {/* 5. Horizontal Dashed Purple REF Mean Line */}
+            <g>
+              <line
+                x1={padL}
+                y1={getY(activeRefStats.mean)}
+                x2={w - padR}
+                y2={getY(activeRefStats.mean)}
+                stroke="#7C3AED"
+                strokeWidth="2"
+                strokeDasharray="6 4"
+              />
+              <rect
+                x={w - padR - 104}
+                y={getY(activeRefStats.mean) - 10}
+                width={98}
+                height={18}
+                rx={4}
+                fill="#F5F3FF"
+                stroke="#7C3AED"
+                strokeWidth="1.2"
+              />
+              <text
+                x={w - padR - 55}
+                y={getY(activeRefStats.mean) + 2}
+                textAnchor="middle"
+                className="fill-purple-800 text-[10px] font-mono font-extrabold"
+              >
+                REF Mean: {formatVal(activeRefStats.mean)}
+              </text>
+            </g>
 
             {/* 6. Vertical Date Guidelines & Bottom X-Axis Date + Session Context Labels */}
             {chronologicalPoints.map((pt, idx) => {
@@ -1443,8 +1109,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 {/* Highlight Steep Transition Segments */}
                 {chronologicalPoints.map((pt, i) => {
                   if (i === 0 || pt.deltaFromPrev === null) return null;
-                  const isSteep =
-                    Math.abs(pt.deltaFromPrev) >= metricCfg.significantShiftThreshold;
+                  const isSteep = Math.abs(pt.deltaFromPrev) >= significantShiftThreshold;
                   if (!isSteep) return null;
 
                   const prevPt = chronologicalPoints[i - 1];
@@ -1591,23 +1256,23 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5 font-extrabold text-[#001489]">
               <span className="w-3 h-3 rounded-full bg-[#001489] inline-block" />
-              Within Suggested Window (Mean ± 1 SD)
+              Within Reference Band (Mean ± 1 SD)
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-[#DA291C]">
               <span className="w-3 h-3 rounded-full bg-[#DA291C] inline-block" />
-              Above Window / Suggested Stiffness or Slip Watch
+              Above +1 SD ({activePdfSpec.rightSpectrum.title} • {activePdfSpec.rightSpectrum.suggestedInjuryWatch})
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-amber-800">
               <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-              Compliant Surface or Higher Spatial Variance (±SD)
+              Below −1 SD ({activePdfSpec.leftSpectrum.title}) or High Zone Variance
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-emerald-800">
               <span className="w-3.5 h-2.5 rounded-sm bg-emerald-500/20 border border-emerald-600 inline-block" />
-              Suggested Target Window ({metricCfg.idealMin}–{metricCfg.idealMax})
+              REF Band ({activeRefStats.bandLow.toFixed(2)}–{activeRefStats.bandHigh.toFixed(2)})
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-purple-800">
               <span className="w-3.5 h-0.5 bg-purple-600 inline-block" />
-              Purple REF Baseline
+              Purple REF Mean ({activeRefStats.mean.toFixed(2)})
             </span>
           </div>
           <span className="text-[#64748B] font-semibold">
@@ -1646,28 +1311,55 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 </span>
               </div>
 
-              {/* 4 Key Exposure Metrics for this Date */}
+              {/* 4 Key Exposure Metrics for this Date (Strictly Impact, Energy, Grip, & Day Shift) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 font-mono">
                 <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
                   <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
-                    {metricCfg.shortLabel} (Mean ± SD)
+                    Impact (Mean ± SD)
                   </span>
                   <strong className="text-base font-black text-[#001489]">
-                    {formatVal(inspectedPoint.mean)} ± {formatVal(inspectedPoint.sd)}
+                    {inspectedPoint.impactMean.toFixed(2)} ± {inspectedPoint.impactSd.toFixed(2)}
                   </strong>
-                  <span className="text-[10px] text-[#64748B] block mt-0.5">
-                    Range: {formatVal(inspectedPoint.min)}–{formatVal(inspectedPoint.max)}
+                  <span className="text-[10px] text-emerald-800 font-sans font-semibold block mt-0.5">
+                    REF: [{referenceProfile.metrics.Impact.bandLow.toFixed(2)}–
+                    {referenceProfile.metrics.Impact.bandHigh.toFixed(2)}]
                   </span>
                 </div>
 
                 <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
                   <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
-                    Day-to-Day Shift (Δ)
+                    Energy (Mean ± SD)
+                  </span>
+                  <strong className="text-base font-black text-[#2E3440]">
+                    {inspectedPoint.energyMean.toFixed(2)} ± {inspectedPoint.energySd.toFixed(2)}
+                  </strong>
+                  <span className="text-[10px] text-emerald-800 font-sans font-semibold block mt-0.5">
+                    REF: [{referenceProfile.metrics.Energy.bandLow.toFixed(2)}–
+                    {referenceProfile.metrics.Energy.bandHigh.toFixed(2)}]
+                  </span>
+                </div>
+
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
+                  <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
+                    Grip (Mean ± SD)
+                  </span>
+                  <strong className="text-base font-black text-[#2E3440]">
+                    {inspectedPoint.gripMean.toFixed(2)} ± {inspectedPoint.gripSd.toFixed(2)}
+                  </strong>
+                  <span className="text-[10px] text-emerald-800 font-sans font-semibold block mt-0.5">
+                    REF: [{referenceProfile.metrics.Grip.bandLow.toFixed(2)}–
+                    {referenceProfile.metrics.Grip.bandHigh.toFixed(2)}]
+                  </span>
+                </div>
+
+                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
+                  <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
+                    Day-to-Day Shift (Δ {trendMetric})
                   </span>
                   <strong
                     className={`text-base font-black ${
                       inspectedPoint.deltaFromPrev !== null &&
-                      Math.abs(inspectedPoint.deltaFromPrev) >= metricCfg.significantShiftThreshold
+                      Math.abs(inspectedPoint.deltaFromPrev) >= significantShiftThreshold
                         ? 'text-[#DA291C]'
                         : 'text-[#2E3440]'
                     }`}
@@ -1679,31 +1371,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                       : formatVal(inspectedPoint.deltaFromPrev)}
                   </strong>
                   <span className="text-[10px] text-[#64748B] font-sans block mt-0.5">
-                    vs Previous Camp Session
-                  </span>
-                </div>
-
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
-                  <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
-                    Surface Hardness
-                  </span>
-                  <strong className="text-base font-black text-[#92400E]">
-                    {inspectedPoint.hardnessMean.toFixed(1)} Gm
-                  </strong>
-                  <span className="text-[10px] text-[#64748B] font-sans block mt-0.5">
-                    Target: 68–85 Gm
-                  </span>
-                </div>
-
-                <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3">
-                  <span className="text-[10px] font-sans font-extrabold uppercase text-[#64748B] block">
-                    Stud Penetration
-                  </span>
-                  <strong className="text-base font-black text-[#2E3440]">
-                    {inspectedPoint.studDepthMean.toFixed(1)} mm
-                  </strong>
-                  <span className="text-[10px] text-[#64748B] font-sans block mt-0.5">
-                    Target: 9.5–13.5 mm
+                    vs Previous Session
                   </span>
                 </div>
               </div>
@@ -1761,54 +1429,46 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               <div className="space-y-3 text-xs text-[#434C5E]">
                 <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[8px] p-3">
                   <strong className="text-[#2E3440] block mb-1">
-                    Observed Camp Surface Progression for This Lens:
+                    Observed Camp Surface Progression for This Spectrum:
                   </strong>
                   <p className="leading-relaxed">
-                    {clinicalLens === 'patellar_achilles' && (
+                    {clinicalLens === 'impact_lens' && (
                       <>
-                        Following 4 more compliant training days at NTC (Impact{' '}
-                        <strong>3.7–4.6</strong>), the team encountered a{' '}
-                        <strong>+1.91 Impact upward shift</strong> on Sept 29 (St. Louis:{' '}
-                        <strong>6.68 ± 0.35</strong>, 98.5 Gm) followed by firmer, higher-variance
-                        surfaces in Arizona (<strong>6.24 ± 0.78</strong>) and Minnesota (
-                        <strong>6.67 ± 0.76</strong>). From a theoretical leg-stiffness perspective,
-                        this transition may help explain increased patellar or Achilles tendon
-                        soreness reports in predisposed players.
+                        Following 4 training days at NTC within the <strong>3.65–5.01</strong> reference
+                        band, the team encountered a <strong>+1.91 Impact jump</strong> on Sept 29 (St.
+                        Louis: <strong>6.68 ± 0.35</strong>) followed by firmer, higher-variance
+                        stadiums in Arizona (<strong>6.24 ± 0.78</strong>) and Minnesota (
+                        <strong>6.67 ± 0.76</strong>). On the Raw Stadia Impact spectrum, this shifts
+                        from a balanced surface toward a <strong>HARD FIELD</strong> (suggested watch:{' '}
+                        <strong>Tendons | Joints</strong>).
                       </>
                     )}
-                    {clinicalLens === 'muscular_fatigue' && (
+                    {clinicalLens === 'energy_lens' && (
                       <>
-                        More compliant, energy-absorbing exposures occurred on{' '}
-                        <strong>Sept 23 at NTC</strong> (Impact dipped to{' '}
-                        <strong>3.06 ± 0.99</strong> on Field 3) and{' '}
-                        <strong>Sept 25 Orlando MD-1</strong> (<strong>3.75 ± 0.87</strong> with 2.0
-                        soft spots), which can moderately increase ground contact time and calf/hamstring
-                        muscular work relative to firmer sessions.
+                        Energy Restitution remained tightly clustered near the NTC mean (
+                        <strong>3.98 ± 0.38</strong>) across most sessions, with lower-energy zones
+                        appearing on <strong>Sept 23 at NTC (3.73 ± 0.38)</strong> and localized zones
+                        in <strong>Orlando MD-1 (min 3.30)</strong>—shifting toward a{' '}
+                        <strong>DISSIPATING FIELD</strong> (suggested watch:{' '}
+                        <strong>Calves | Cramps</strong>).
                       </>
                     )}
-                    {clinicalLens === 'joint_torque' && (
+                    {clinicalLens === 'grip_lens' && (
                       <>
-                        While mean camp Grip stayed within the 5.5–7.2 target window after Sept 2,
-                        localized central-pitch zones reached <strong>8.1 in Orlando</strong> and{' '}
-                        <strong>8.4 in St. Louis (73.1 Nm peak torque)</strong>, representing areas
-                        of higher cleat-surface rotational resistance.
+                        While mean camp Grip stayed within the NTC reference band (
+                        <strong>5.35–7.13</strong>) after Sept 2, localized central-corridor zones
+                        reached <strong>8.10 in Orlando</strong> and <strong>8.40 in St. Louis</strong>
+                        —shifting those specific zones into a <strong>HIGH TRACTION FIELD</strong>{' '}
+                        (suggested watch: <strong>Ankle | Knee</strong>).
                       </>
                     )}
-                    {clinicalLens === 'groin_adductor' && (
-                      <>
-                        Stud Penetration Depth dipped below the 9.5 mm target window in{' '}
-                        <strong>St. Louis (9.1 mm)</strong> and <strong>Arizona (8.6 mm)</strong> on
-                        compact stadium rootzones, where longer or wider studs may penetrate less
-                        completely during high-speed lateral cuts.
-                      </>
-                    )}
-                    {clinicalLens === 'general' && activeLensSpec.managementGuidance}
+                    {clinicalLens === 'triad_overview' && activeLensSpec.managementGuidance}
                   </p>
                 </div>
 
                 <div className="bg-[#FEF3C7]/45 border border-[#FDE68A] rounded-[8px] p-3">
                   <strong className="text-[#92400E] block mb-1">
-                    Suggested Load &amp; Footwear Considerations:
+                    Suggested Clinical &amp; Load Considerations:
                   </strong>
                   <p className="leading-relaxed text-[#2E3440] font-medium">
                     {activeLensSpec.managementGuidance}
@@ -1821,7 +1481,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       )}
 
       {/* ===================================================================
-          5. CHRONOLOGICAL CAMP PROGRESSION TABLE (MEAN ± SD & TRANSITIONS)
+          5. CHRONOLOGICAL CAMP PROGRESSION TABLE (IMPACT, ENERGY, GRIP ONLY)
           =================================================================== */}
       <div
         className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
@@ -1835,8 +1495,9 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             </h3>
             <p className="text-xs text-[#64748B] font-medium">
               Ordered chronologically from <strong>{startDate}</strong> to <strong>{endDate}</strong>,
-              showing <strong>Mean ± 1 SD</strong>, <strong>18-Zone Min–Max</strong>,{' '}
-              <strong>Day-to-Day Shift (Δ)</strong>, and <strong>Suggested Considerations</strong>.
+              showing <strong>Mean ± 1 SD</strong> for <strong>Impact</strong>, <strong>Energy</strong>, and{' '}
+              <strong>Grip</strong>, plus <strong>Day-to-Day Shift (Δ)</strong> and{' '}
+              <strong>PDF Spectrum Watch Context</strong>.
             </p>
           </div>
         </div>
@@ -1848,136 +1509,107 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 <th>Date</th>
                 <th>Session / Venue Context</th>
                 <th>Objective</th>
-                <th className="text-right">{metricCfg.shortLabel} (Mean ± SD)</th>
-                <th className="text-right">Zone Min–Max</th>
-                <th className="text-right">Day-to-Day Δ</th>
-                <th className="text-right">Impact (Mean ± SD)</th>
-                <th className="text-right">Hardness</th>
-                <th className="text-right">Stud Depth</th>
-                <th className="text-center">Suggested Cleat</th>
-                <th className="text-left">Suggested Context</th>
-                <th className="text-right">Compare</th>
+                <th>
+                  Active: {trendMetric} (Mean ± SD)
+                </th>
+                <th>18-Zone Range</th>
+                <th>Day Shift (Δ)</th>
+                <th>Impact (Mean ± SD)</th>
+                <th>Energy (Mean ± SD)</th>
+                <th>Grip (Mean ± SD)</th>
+                <th>Suggested Spectrum Context</th>
+                <th className="text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="font-mono">
+            <tbody>
               {chronologicalPoints.map((pt) => {
-                const isInspected = inspectedPoint?.key === pt.key;
-                const isPrim = pt.repEval.id === selectedPrimaryId;
-                const isComp = pt.repEval.id === selectedCompareId;
                 const status = getPointClinicalStatus(pt);
-                const bootRec = getBootRecommendation(
-                  pt.repEval.averages.Boot,
-                  pt.studDepthMean,
-                  pt.gripMean
-                );
+                const isSelected = inspectedPoint?.key === pt.key;
+                const isSteepShift =
+                  pt.deltaFromPrev !== null &&
+                  Math.abs(pt.deltaFromPrev) >= significantShiftThreshold;
 
                 return (
                   <tr
                     key={pt.key}
                     onClick={() => setSelectedPointKey(pt.key)}
                     className={`cursor-pointer transition-colors ${
-                      isInspected
-                        ? 'bg-[#EFF6FF]'
-                        : isComp
-                        ? 'bg-[#FEF3C7]/35'
-                        : 'hover:bg-[#F8FAFC]'
+                      isSelected ? 'selected-row' : ''
                     }`}
                   >
-                    <td className="whitespace-nowrap text-[#2E3440] font-extrabold">{pt.date}</td>
-                    <td className="font-sans font-bold text-[#2E3440] whitespace-nowrap">
-                      {pt.venueShort}
-                      {pt.allEvalsOnDate.length > 1 && aggregationMode === 'daily_team' && (
-                        <span className="ml-1.5 text-[10px] font-semibold text-[#64748B]">
-                          (3 Pitches)
-                        </span>
-                      )}
+                    <td className="font-mono font-bold text-[#001489] whitespace-nowrap">
+                      {pt.date}
                     </td>
-                    <td className="font-sans">
-                      <span className="px-2 py-0.5 rounded bg-[#F1F5F9] border border-[#E2E8F0] text-[#434C5E] text-[11px] font-bold">
+                    <td className="font-extrabold text-[#2E3440]">
+                      <div>{pt.venueShort}</div>
+                      <div className="text-[11px] font-medium text-[#64748B]">
+                        {pt.allEvalsOnDate.map((e) => e.pitchName).join(', ')}
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded ${
+                          pt.isMatchDay
+                            ? 'bg-amber-100 text-[#92400E] border border-amber-300'
+                            : 'bg-[#EFF6FF] text-[#001489]'
+                        }`}
+                      >
                         {pt.objective}
                       </span>
                     </td>
-                    <td className="text-right font-extrabold text-[#001489] whitespace-nowrap">
-                      {formatVal(pt.mean)} <span className="text-[#64748B]">± {formatVal(pt.sd)}</span>
+                    <td className="font-mono font-black text-[#001489]">
+                      {formatVal(pt.mean)}{' '}
+                      <span className="text-xs font-semibold text-[#64748B]">
+                        ± {formatVal(pt.sd)}
+                      </span>
                     </td>
-                    <td className="text-right text-[#434C5E] whitespace-nowrap">
+                    <td className="font-mono text-xs text-[#434C5E] font-semibold">
                       {formatVal(pt.min)} – {formatVal(pt.max)}
                     </td>
-                    <td
-                      className={`text-right font-extrabold whitespace-nowrap ${
-                        pt.deltaFromPrev !== null &&
-                        Math.abs(pt.deltaFromPrev) >= metricCfg.significantShiftThreshold
-                          ? 'text-[#DA291C]'
-                          : 'text-[#64748B]'
-                      }`}
-                    >
-                      {pt.deltaFromPrev === null
-                        ? '—'
-                        : pt.deltaFromPrev > 0
-                        ? `+${formatVal(pt.deltaFromPrev)}`
-                        : formatVal(pt.deltaFromPrev)}
+                    <td className="font-mono font-bold">
+                      {pt.deltaFromPrev === null ? (
+                        <span className="text-xs text-[#94A3B8]">—</span>
+                      ) : (
+                        <span
+                          className={`px-1.5 py-0.5 rounded text-xs ${
+                            isSteepShift
+                              ? 'bg-red-50 text-[#DA291C] border border-red-200 font-black'
+                              : 'text-[#434C5E]'
+                          }`}
+                        >
+                          {pt.deltaFromPrev > 0
+                            ? `+${formatVal(pt.deltaFromPrev)}`
+                            : formatVal(pt.deltaFromPrev)}
+                        </span>
+                      )}
                     </td>
-                    <td className="text-right text-[#2E3440] whitespace-nowrap">
+                    <td className="font-mono font-bold text-[#2E3440]">
                       {pt.impactMean.toFixed(2)} ± {pt.impactSd.toFixed(2)}
                     </td>
-                    <td className="text-right font-bold text-[#92400E] whitespace-nowrap">
-                      {pt.hardnessMean.toFixed(1)} Gm
+                    <td className="font-mono font-bold text-[#2E3440]">
+                      {pt.energyMean.toFixed(2)} ± {pt.energySd.toFixed(2)}
                     </td>
-                    <td className="text-right text-[#434C5E] whitespace-nowrap">
-                      {pt.studDepthMean.toFixed(1)} mm
+                    <td className="font-mono font-bold text-[#2E3440]">
+                      {pt.gripMean.toFixed(2)} ± {pt.gripSd.toFixed(2)}
                     </td>
-                    <td className="text-center font-sans whitespace-nowrap">
+                    <td>
                       <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${bootRec.badgeBg}`}
+                        className={`text-[11px] font-extrabold px-2 py-0.5 rounded border inline-block ${status.badgeBg}`}
                       >
-                        {bootRec.code}
+                        {status.label}
                       </span>
                     </td>
-                    <td className="font-sans whitespace-nowrap">
-                      <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${status.badgeBg}`}
+                    <td className="text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectPrimary(pt.repEval.id);
+                        }}
+                        className="px-2.5 py-1 rounded bg-[#001489] hover:bg-[#1E3A8A] text-white text-xs font-bold"
                       >
-                        {status.status === 'optimal'
-                          ? '✓ Target Window'
-                          : status.status === 'overload'
-                          ? 'Suggested Watch (High)'
-                          : 'Suggested Watch (Soft/SD)'}
-                      </span>
-                    </td>
-                    <td
-                      className="text-right whitespace-nowrap font-sans"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="inline-flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onSelectPrimary(pt.repEval.id)}
-                          className={`px-2 py-1 rounded-[5px] text-[10px] border transition-all ${
-                            isPrim
-                              ? 'bg-[#001489] text-white border-[#001489] font-extrabold'
-                              : 'bg-white text-[#2E3440] border-[#CBD5E1] font-bold hover:border-[#001489]'
-                          }`}
-                        >
-                          {isPrim ? (
-                            <span className="flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> Pitch A
-                            </span>
-                          ) : (
-                            'Pitch A'
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onSelectCompare(pt.repEval.id)}
-                          className={`px-2 py-1 rounded-[5px] text-[10px] border transition-all ${
-                            isComp
-                              ? 'bg-[#C69214] text-white border-[#C69214] font-extrabold'
-                              : 'bg-white text-[#2E3440] border-[#CBD5E1] font-bold hover:border-[#C69214]'
-                          }`}
-                        >
-                          Pitch B
-                        </button>
-                      </div>
+                        Inspect Pitch A
+                      </button>
                     </td>
                   </tr>
                 );

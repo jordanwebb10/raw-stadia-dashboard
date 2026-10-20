@@ -1,5 +1,6 @@
 import React from 'react';
-import { IndexName, PitchZone } from '../types/rawStadia';
+import { getKnowledgeSpec } from '../data/rawStadiaKnowledge';
+import { IndexName, MetricReferenceStats, PitchZone } from '../types/rawStadia';
 import { getMagnitudeAssessment, getZoneStatusColor } from '../utils/rawStadiaEngine';
 import { MetricInfoTrigger } from './AppendixAModal';
 
@@ -8,20 +9,20 @@ export type TriadMiniMapMode = 'stackAB' | 'pitchA' | 'pitchB' | 'deltaAB';
 interface RefGaugeCardProps {
   metric: IndexName;
   value: number;
+  primarySd?: number;
   primaryLabel: string;
   compareValue: number;
+  compareSd?: number;
   compareLabel: string;
   compareZones: PitchZone[];
-  refValue: number;
+  refStats: MetricReferenceStats;
   refLabel: string;
-  optimalRange: [number, number];
   zones: PitchZone[];
   selectedZone?: number | null;
   onSelectZone?: (zoneNum: number) => void;
-  onOpenAppendixA?: (metricKey: string) => void;
+  onOpenAppendixA?: (metricKey: IndexName) => void;
   miniMapMode?: TriadMiniMapMode;
   showMiniPitch?: boolean;
-  subtitle?: string;
 }
 
 export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
@@ -31,26 +32,28 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
   compareValue,
   compareLabel,
   compareZones,
-  refValue,
+  refStats,
   refLabel,
-  optimalRange,
   zones,
   selectedZone,
   onSelectZone,
   onOpenAppendixA,
   miniMapMode = 'stackAB',
   showMiniPitch = true,
-  subtitle,
 }) => {
+  const spec = getKnowledgeSpec(metric);
+  const refValue = refStats.mean;
+  const optimalRange: [number, number] = [refStats.bandMin, refStats.bandMax];
+
   const pctPrimary = Math.max(0, Math.min(100, (value / 10) * 100));
   const pctCompare = Math.max(0, Math.min(100, (compareValue / 10) * 100));
   const pctRef = Math.max(0, Math.min(100, (refValue / 10) * 100));
   const optStartPct = (optimalRange[0] / 10) * 100;
-  const optWidthPct = ((optimalRange[1] - optimalRange[0]) / 10) * 100;
+  const optWidthPct = Math.max(2, ((optimalRange[1] - optimalRange[0]) / 10) * 100);
 
-  // Magnitude assessments for Pitch A vs Pitch B and Pitch A vs REF
-  const magAB = getMagnitudeAssessment(metric, value, compareValue, 'idx');
-  const magRef = getMagnitudeAssessment(metric, value, refValue, 'idx');
+  // Magnitude assessments using empirical Reference SD
+  const magAB = getMagnitudeAssessment(metric, value, compareValue, refStats.sd);
+  const magRef = getMagnitudeAssessment(metric, value, refValue, refStats.sd);
 
   // Compute 18-zone min, max, and SD for Pitch A and Pitch B
   const calcSpread = (zList: PitchZone[]) => {
@@ -67,7 +70,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
   const spreadA = calcSpread(zones);
   const spreadB = calcSpread(compareZones);
 
-  const badgeA = getZoneStatusColor(metric, value);
+  const badgeA = getZoneStatusColor(metric, value, refStats);
 
   const renderSingleMiniPitch = (
     targetZones: PitchZone[],
@@ -118,9 +121,11 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
             <div key={rIdx} className="grid grid-cols-6 gap-1 justify-items-center">
               {rowZones.map((z) => {
                 if (!z) return null;
-                const aVal = zones.find((az) => az.zone === z.zone)?.metrics[metric] ?? z.metrics[metric];
+                const aVal =
+                  zones.find((az) => az.zone === z.zone)?.metrics[metric] ?? z.metrics[metric];
                 const bVal =
-                  compareZones.find((bz) => bz.zone === z.zone)?.metrics[metric] ?? z.metrics[metric];
+                  compareZones.find((bz) => bz.zone === z.zone)?.metrics[metric] ??
+                  z.metrics[metric];
                 const diffAB = Number((aVal - bVal).toFixed(1));
 
                 const displayVal = mode === 'deltaAB' ? diffAB : z.metrics[metric];
@@ -131,7 +136,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
                       : diffAB > 0
                       ? { bg: 'bg-[#001489]', border: 'border-blue-200', text: 'text-white' }
                       : { bg: 'bg-[#C69214]', border: 'border-amber-200', text: 'text-white' }
-                    : getZoneStatusColor(metric, z.metrics[metric]);
+                    : getZoneStatusColor(metric, z.metrics[metric], refStats);
 
                 const isSelected = selectedZone === z.zone;
 
@@ -181,7 +186,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
               {metric}
             </span>
             <span className="text-[11px] font-bold text-[#64748B]">
-              • {subtitle || '0–10 Index'}
+              • {spec.lowSpectrum.title} ↔ {spec.highSpectrum.title}
             </span>
             {onOpenAppendixA && (
               <MetricInfoTrigger metricKey={metric} onOpenModal={onOpenAppendixA} />
@@ -208,15 +213,12 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
               className="text-[9px] font-extrabold uppercase tracking-wider text-[#001489] truncate"
               title={`Pitch A: ${primaryLabel}`}
             >
-              Pitch A
+              Pitch A (±{spreadA.sd.toFixed(2)})
             </div>
             <div className="text-2xl font-black text-[#2E3440] font-mono leading-tight my-0.5">
-              {value.toFixed(1)}
+              {value.toFixed(2)}
             </div>
-            <div
-              className="text-[9px] font-bold text-[#434C5E] truncate"
-              title={primaryLabel}
-            >
+            <div className="text-[9px] font-bold text-[#434C5E] truncate" title={primaryLabel}>
               {primaryLabel}
             </div>
           </div>
@@ -227,119 +229,145 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
               className="text-[9px] font-extrabold uppercase tracking-wider text-[#92400E] truncate"
               title={`Pitch B: ${compareLabel}`}
             >
-              Pitch B
+              Pitch B (±{spreadB.sd.toFixed(2)})
             </div>
             <div className="text-2xl font-black text-[#2E3440] font-mono leading-tight my-0.5">
-              {compareValue.toFixed(1)}
+              {compareValue.toFixed(2)}
             </div>
             <div className="text-[9px] font-mono font-extrabold text-[#92400E]">
-              A vs B: {magAB.delta > 0 ? `+${magAB.delta.toFixed(1)}` : magAB.delta.toFixed(1)} (
+              A vs B: {magAB.delta > 0 ? `+${magAB.delta.toFixed(2)}` : magAB.delta.toFixed(2)} (
               {magAB.zScore > 0 ? `+${magAB.zScore.toFixed(1)}σ` : `${magAB.zScore.toFixed(1)}σ`})
             </div>
           </div>
 
-          {/* Column 3: Reference Baseline (Purple REF) */}
+          {/* Column 3: Reference Baseline (#7C3AED Purple) */}
           <div className="bg-purple-50/70 border border-purple-200 border-t-[3px] border-t-purple-600 rounded-[8px] p-2 text-center">
             <div
               className="text-[9px] font-extrabold uppercase tracking-wider text-purple-800 truncate"
               title={`REF: ${refLabel}`}
             >
-              Purple REF
+              REF (±{refStats.sd.toFixed(2)})
             </div>
             <div className="text-2xl font-black text-purple-900 font-mono leading-tight my-0.5">
-              {refValue.toFixed(1)}
+              {refValue.toFixed(2)}
             </div>
             <div className="text-[9px] font-mono font-extrabold text-purple-800">
-              A vs REF: {magRef.delta > 0 ? `+${magRef.delta.toFixed(1)}` : magRef.delta.toFixed(1)} (
-              {magRef.zScore > 0 ? `+${magRef.zScore.toFixed(1)}σ` : `${magRef.zScore.toFixed(1)}σ`})
+              A vs REF:{' '}
+              {magRef.delta > 0 ? `+${magRef.delta.toFixed(2)}` : magRef.delta.toFixed(2)} (
+              {magRef.zScore > 0
+                ? `+${magRef.zScore.toFixed(1)}σ`
+                : `${magRef.zScore.toFixed(1)}σ`}
+              )
             </div>
           </div>
         </div>
 
-        {/* LAYER 2: Dual 0-10 Horizontal Gauge Track (Pitch A + Pitch B) with Shared Optimal Band & Purple REF Line */}
-        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3 mb-3.5">
-          <div className="flex justify-between text-[10px] font-bold text-[#64748B] mb-1.5">
-            <span>0.0</span>
-            <span className="text-emerald-700 font-extrabold">
-              Optimal Window: {optimalRange[0].toFixed(1)}–{optimalRange[1].toFixed(1)}
+        {/* Magnitude Summary Pill (Pitch A vs Pitch B) */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+            A vs B Effect Size:
+          </span>
+          <span
+            className={`text-[10px] font-mono font-extrabold px-2 py-0.5 rounded border ${magAB.badgeClass}`}
+          >
+            {magAB.summaryText}
+          </span>
+        </div>
+
+        {/* LAYER 2: 0–10 Multi-Marker Gauge Bar (Visualizing Pitch A + Pitch B + REF + Reference Band) */}
+        <div className="mb-5">
+          <div className="flex justify-between items-center text-[10px] font-bold text-[#64748B] mb-1 font-mono">
+            <span>0.0 ({spec.lowSpectrum.title})</span>
+            <span className="text-emerald-700 font-sans font-extrabold">
+              Ref Band (±1 SD): {optimalRange[0].toFixed(2)}–{optimalRange[1].toFixed(2)}
             </span>
-            <span>10.0</span>
+            <span>10.0 ({spec.highSpectrum.title})</span>
           </div>
 
-          <div className="relative space-y-2 py-1">
-            {/* Shared Vertical Purple REF Marker Line slicing through BOTH Pitch A and Pitch B bars */}
+          <div className="relative h-6 rounded-[6px] bg-[#E2E8F0] overflow-visible flex items-center">
+            {/* 5-segment subtle background bands */}
+            <div className="w-[20%] h-full bg-[#F1F5F9] rounded-l-[6px] border-r border-white/60" />
+            <div className="w-[15%] h-full bg-[#E2E8F0] border-r border-white/60" />
+            <div className="w-[30%] h-full bg-emerald-500/15 border-r border-white/60" />
+            <div className="w-[15%] h-full bg-[#E2E8F0] border-r border-white/60" />
+            <div className="w-[20%] h-full bg-[#F1F5F9] rounded-r-[6px]" />
+
+            {/* Highlighted Empirical Reference Range Band (Mean ± 1 SD) */}
             <div
-              className="absolute -top-1 -bottom-3.5 w-0.5 bg-purple-600 z-20 pointer-events-none shadow-[0_0_6px_rgba(124,58,237,0.6)]"
+              className="absolute top-0 bottom-0 bg-emerald-500/25 border-x-2 border-emerald-600/60 pointer-events-none"
+              style={{ left: `${optStartPct}%`, width: `${optWidthPct}%` }}
+            />
+
+            {/* Pitch A 18-Zone Min–Max Whisker Line (Top Track) */}
+            <div
+              className="absolute top-[5px] h-[2px] bg-[#001489]/60 pointer-events-none"
+              style={{
+                left: `${(spreadA.min / 10) * 100}%`,
+                width: `${Math.max(1, ((spreadA.max - spreadA.min) / 10) * 100)}%`,
+              }}
+            />
+
+            {/* Pitch B 18-Zone Min–Max Whisker Line (Bottom Track) */}
+            <div
+              className="absolute bottom-[5px] h-[2px] bg-[#C69214]/75 pointer-events-none"
+              style={{
+                left: `${(spreadB.min / 10) * 100}%`,
+                width: `${Math.max(1, ((spreadB.max - spreadB.min) / 10) * 100)}%`,
+              }}
+            />
+
+            {/* Primary Pitch A Horizontal Bar Fill (Upper Half of Track) */}
+            <div
+              className="absolute left-0 top-1 h-2 rounded-r-full bg-[#001489] shadow-sm transition-all duration-300"
+              style={{ width: `${pctPrimary}%` }}
+            />
+
+            {/* Compare Pitch B Horizontal Bar Fill (Lower Half of Track) */}
+            <div
+              className="absolute left-0 bottom-1 h-2 rounded-r-full bg-[#C69214] shadow-sm transition-all duration-300"
+              style={{ width: `${pctCompare}%` }}
+            />
+
+            {/* Purple Vertical REF Line */}
+            <div
+              className="absolute -top-2 -bottom-2 w-[2.5px] bg-purple-600 z-10 shadow-sm"
               style={{ left: `${pctRef}%` }}
               title={`REF (${refLabel}): ${refValue.toFixed(2)}`}
             >
-              <span className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 text-[8px] font-extrabold text-purple-800 bg-purple-50 border border-purple-300 px-1 rounded whitespace-nowrap">
+              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-extrabold text-purple-700 tracking-wider whitespace-nowrap font-mono bg-purple-50 px-1 rounded border border-purple-200">
                 REF {refValue.toFixed(1)}
-              </span>
-            </div>
-
-            {/* Bar 1: Pitch A (USSF Navy #001489) */}
-            <div>
-              <div className="flex justify-between text-[10px] font-bold mb-0.5">
-                <span className="text-[#001489] truncate max-w-[180px]">
-                  A: {primaryLabel}
-                </span>
-                <span className="font-mono font-black text-[#001489]">{value.toFixed(2)}</span>
-              </div>
-              <div className="relative h-3 bg-white border border-[#CBD5E1] rounded-full overflow-hidden">
-                {/* Shaded Green Optimal Band */}
-                <div
-                  className="absolute top-0 bottom-0 bg-emerald-500/25 border-x border-emerald-500/60"
-                  style={{ left: `${optStartPct}%`, width: `${optWidthPct}%` }}
-                />
-                <div
-                  className="relative h-full bg-[#001489] rounded-full transition-all duration-300 z-10"
-                  style={{ width: `${pctPrimary}%` }}
-                />
               </div>
             </div>
 
-            {/* Bar 2: Pitch B (USSF Gold #C69214) */}
-            <div>
-              <div className="flex justify-between text-[10px] font-bold mb-0.5">
-                <span className="text-[#92400E] truncate max-w-[180px]">
-                  B: {compareLabel}
-                </span>
-                <span className="font-mono font-black text-[#92400E]">{compareValue.toFixed(2)}</span>
-              </div>
-              <div className="relative h-3 bg-white border border-[#CBD5E1] rounded-full overflow-hidden">
-                {/* Shaded Green Optimal Band */}
-                <div
-                  className="absolute top-0 bottom-0 bg-emerald-500/25 border-x border-emerald-500/60"
-                  style={{ left: `${optStartPct}%`, width: `${optWidthPct}%` }}
-                />
-                <div
-                  className="relative h-full bg-[#C69214] rounded-full transition-all duration-300 z-10"
-                  style={{ width: `${pctCompare}%` }}
-                />
-              </div>
+            {/* Pitch B Gold Diamond/Circle Marker */}
+            <div
+              className="absolute bottom-[-3px] -translate-x-1/2 w-4 h-4 rounded-full bg-[#C69214] border-2 border-white shadow-md z-20 flex items-center justify-center text-[8px] font-black text-white"
+              style={{ left: `${pctCompare}%` }}
+              title={`Pitch B (${compareLabel}): ${compareValue.toFixed(2)} (Range ${spreadB.min.toFixed(
+                1
+              )}–${spreadB.max.toFixed(1)})`}
+            >
+              B
             </div>
-          </div>
 
-          {/* Magnitude Summary Footer inside Gauge Box */}
-          <div className="mt-4 pt-2 border-t border-[#E2E8F0] flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-1 text-[10px]">
-              <span className="font-extrabold text-[#434C5E]">Pitch A vs Pitch B:</span>
-              <span className={`font-extrabold px-1.5 py-0.5 rounded border ${magAB.badgeClass}`}>
-                {magAB.summaryText}
-              </span>
+            {/* Pitch A Navy Circle Marker */}
+            <div
+              className="absolute top-[-3px] -translate-x-1/2 w-4 h-4 rounded-full bg-[#001489] border-2 border-white shadow-md z-30 flex items-center justify-center text-[8px] font-black text-white"
+              style={{ left: `${pctPrimary}%` }}
+              title={`Pitch A (${primaryLabel}): ${value.toFixed(2)} (Range ${spreadA.min.toFixed(
+                1
+              )}–${spreadA.max.toFixed(1)})`}
+            >
+              A
             </div>
-            <p className="text-[10.5px] text-[#64748B] font-medium leading-snug">
-              {magAB.clinicalNote}
-            </p>
           </div>
         </div>
       </div>
 
-      {/* LAYER 3: 18-Zone Mini Pitch Map(s) (Supports Stacked A+B, Pitch A, Pitch B, or Zone Delta A-B) */}
+      {/* LAYER 3: 18-Zone Pitch Map Comparison */}
       {showMiniPitch && (
-        <div className="space-y-2">
-          {miniMapMode === 'stackAB' ? (
+        <div className="mt-1 space-y-2">
+          {miniMapMode === 'stackAB' && (
             <>
               {renderSingleMiniPitch(
                 zones,
@@ -354,30 +382,51 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
                 'border-[#C69214]'
               )}
             </>
-          ) : miniMapMode === 'pitchB' ? (
+          )}
+          {miniMapMode === 'pitchA' &&
+            renderSingleMiniPitch(zones, 'pitchA', `Pitch A: ${primaryLabel}`, 'border-[#001489]')}
+          {miniMapMode === 'pitchB' &&
             renderSingleMiniPitch(
               compareZones,
               'pitchB',
-              `B: ${compareLabel}`,
+              `Pitch B: ${compareLabel}`,
               'border-[#C69214]'
-            )
-          ) : miniMapMode === 'deltaAB' ? (
+            )}
+          {miniMapMode === 'deltaAB' &&
             renderSingleMiniPitch(
               zones,
               'deltaAB',
-              `Δ A − B (${primaryLabel} vs ${compareLabel})`,
-              'border-[#15803D]'
-            )
-          ) : (
-            renderSingleMiniPitch(
-              zones,
-              'pitchA',
-              `A: ${primaryLabel}`,
-              'border-[#001489]'
-            )
-          )}
+              `Zone Δ (Pitch A − Pitch B)`,
+              'border-purple-600'
+            )}
         </div>
       )}
+
+      {/* LAYER 4: PDF Spectrum Summary Footer */}
+      <div className="mt-3 pt-2.5 border-t border-[#E5E9F0] grid grid-cols-2 gap-2 text-[10px]">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px] p-2">
+          <div className="font-extrabold uppercase text-[#001489]">
+            ← {spec.lowSpectrum.title}
+          </div>
+          <div className="text-[#434C5E] font-semibold mt-0.5">
+            {spec.lowSpectrum.loadLabel} • {spec.lowSpectrum.usedFor}
+          </div>
+          <div className="text-[#64748B] mt-0.5">
+            Watch: <strong className="text-[#92400E]">{spec.lowSpectrum.injuryRiskWatch}</strong>
+          </div>
+        </div>
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px] p-2 text-right">
+          <div className="font-extrabold uppercase text-[#001489]">
+            {spec.highSpectrum.title} →
+          </div>
+          <div className="text-[#434C5E] font-semibold mt-0.5">
+            {spec.highSpectrum.loadLabel} • {spec.highSpectrum.usedFor}
+          </div>
+          <div className="text-[#64748B] mt-0.5">
+            Watch: <strong className="text-[#DA291C]">{spec.highSpectrum.injuryRiskWatch}</strong>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

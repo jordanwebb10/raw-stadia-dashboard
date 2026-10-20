@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Compass, Eye, Footprints, Layers, Sparkles } from 'lucide-react';
-import { IndexName, PitchEvaluation } from '../types/rawStadia';
+import { AlertTriangle, Compass, Eye, Layers, ShieldAlert } from 'lucide-react';
+import { IndexName, PitchEvaluation, ReferenceBaselineProfile } from '../types/rawStadia';
+import { RAW_STADIA_INDEX_SPECS } from '../data/rawStadiaKnowledge';
 import {
-  ALL_INDEX_NAMES,
-  getBootRecommendation,
+  CORE_INDEX_NAMES,
   getZoneStatusColor,
   SNAKE_ZONE_COORDS,
 } from '../utils/rawStadiaEngine';
@@ -11,6 +11,7 @@ import {
 interface PitchHeatmap18ZoneProps {
   evaluation: PitchEvaluation;
   comparisonEval?: PitchEvaluation | null;
+  referenceProfile: ReferenceBaselineProfile;
   activeMetric: IndexName;
   onSelectMetric: (m: IndexName) => void;
   selectedZone: number | null;
@@ -20,13 +21,14 @@ interface PitchHeatmap18ZoneProps {
 export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
   evaluation,
   comparisonEval,
+  referenceProfile,
   activeMetric,
   onSelectMetric,
   selectedZone,
   onSelectZone,
 }) => {
   const [showSnakePath, setShowSnakePath] = useState<boolean>(false);
-  const [deltaMode, setDeltaMode] = useState<boolean>(false);
+  const [deltaMode, setDeltaMode] = useState<'single' | 'vs-b' | 'vs-ref'>('single');
 
   // 3 rows (Pos X = 3 Top, 2 Center, 1 Bottom) x 6 cols (Pos Y = 1..6 Left to Right)
   const gridRows = [3, 2, 1].map((posX) =>
@@ -37,11 +39,8 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
     evaluation.zones.find((z) => z.zone === (selectedZone ?? 8)) || evaluation.zones[7];
   const compZoneObj = comparisonEval?.zones.find((z) => z.zone === activeZoneObj.zone);
   const zoneCoordMeta = SNAKE_ZONE_COORDS.find((c) => c.zone === activeZoneObj.zone);
-  const zoneBootRec = getBootRecommendation(
-    activeZoneObj.metrics.Boot,
-    evaluation.hardwareMetrics.studDepthMm,
-    activeZoneObj.metrics.Grip
-  );
+  const activeRefStats = referenceProfile.metrics[activeMetric];
+  const activeSpec = RAW_STADIA_INDEX_SPECS.find((s) => s.index === activeMetric) || RAW_STADIA_INDEX_SPECS[0];
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
@@ -56,16 +55,16 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
             <div className="flex items-center gap-2">
               <Compass className="w-5 h-5 text-[#C69214]" />
               <h3 className="text-lg font-extrabold text-[#2E3440]">
-                18-Zone Spatial Surface Intelligence Map — {evaluation.pitchName}
+                18-Zone Spatial Surface Map — {evaluation.pitchName}
               </h3>
             </div>
             <p className="text-xs text-[#64748B] mt-0.5 font-medium">
               {evaluation.venue} • Date: <strong className="text-[#2E3440]">{evaluation.date}</strong> •
-              Session Objective: <strong className="text-[#001489]">{evaluation.sessionObjective}</strong>
+              Session Context: <strong className="text-[#001489]">{evaluation.sessionObjective}</strong>
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setShowSnakePath(!showSnakePath)}
@@ -79,51 +78,90 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
               {showSnakePath ? 'Hide Tester Walk (1→18)' : 'Show Tester Snake Path (1→18)'}
             </button>
 
-            {comparisonEval && (
+            <div className="inline-flex rounded-[7px] bg-[#F8FAFC] border border-[#CBD5E1] p-0.5">
               <button
                 type="button"
-                onClick={() => setDeltaMode(!deltaMode)}
-                className={`px-3 py-1.5 rounded-[7px] text-xs font-bold border flex items-center gap-1.5 transition-all ${
-                  deltaMode
-                    ? 'bg-purple-50 border-purple-500 text-purple-800'
-                    : 'bg-[#F8F9FA] border-[#CBD5E1] text-[#2E3440] hover:border-[#C69214]'
+                onClick={() => setDeltaMode('single')}
+                className={`px-2.5 py-1 rounded-[5px] text-xs font-bold transition-all ${
+                  deltaMode === 'single'
+                    ? 'bg-[#001489] text-white'
+                    : 'text-[#434C5E] hover:text-[#001489]'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5 text-purple-600" />
-                {deltaMode ? `Showing Δ vs ${comparisonEval.pitchName}` : 'Zone Δ vs REF'}
+                Pitch A Values
               </button>
-            )}
+              {comparisonEval && (
+                <button
+                  type="button"
+                  onClick={() => setDeltaMode('vs-b')}
+                  className={`px-2.5 py-1 rounded-[5px] text-xs font-bold transition-all flex items-center gap-1 ${
+                    deltaMode === 'vs-b'
+                      ? 'bg-[#C69214] text-white'
+                      : 'text-[#434C5E] hover:text-[#C69214]'
+                  }`}
+                >
+                  <Eye className="w-3 h-3" />
+                  Δ vs Pitch B
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setDeltaMode('vs-ref')}
+                className={`px-2.5 py-1 rounded-[5px] text-xs font-bold transition-all ${
+                  deltaMode === 'vs-ref'
+                    ? 'bg-purple-700 text-white'
+                    : 'text-[#434C5E] hover:text-purple-700'
+                }`}
+              >
+                Δ vs REF ({activeRefStats.mean.toFixed(1)})
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Metric Selector Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-4">
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] mr-1">
-            Active Layer:
+        {/* 3 Core Playing Surface Indexes Selector Pills */}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] mr-1">
+              Playing Surface Index:
+            </span>
+            {CORE_INDEX_NAMES.map((m) => {
+              const isAct = activeMetric === m;
+              const spec = RAW_STADIA_INDEX_SPECS.find((s) => s.index === m)!;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => onSelectMetric(m)}
+                  className={`px-3 py-1.5 rounded-[7px] text-xs transition-all border flex items-center gap-2 ${
+                    isAct
+                      ? 'bg-[#001489] text-white border-[#C69214] shadow-sm font-extrabold'
+                      : 'bg-[#F8FAFC] text-[#2E3440] border-[#CBD5E1] font-bold hover:border-[#C69214]'
+                  }`}
+                >
+                  <span>
+                    {m} ({evaluation.averages[m].toFixed(2)} ± {evaluation.stdDevs[m].toFixed(2)})
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                      isAct ? 'bg-white/15 text-amber-200' : 'bg-white text-[#64748B] border border-[#E2E8F0]'
+                    }`}
+                  >
+                    {spec.leftSpectrum.title.replace(' FIELD', '')} ↔{' '}
+                    {spec.rightSpectrum.title.replace(' FIELD', '')}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
+            REF Band ({referenceProfile.shortLabel}): [{activeRefStats.bandLow.toFixed(2)} –{' '}
+            {activeRefStats.bandHigh.toFixed(2)}]
           </span>
-          {ALL_INDEX_NAMES.map((m) => {
-            const isAct = activeMetric === m;
-            const isPerf = m === 'Impact' || m === 'Energy' || m === 'Grip';
-            return (
-              <button
-                key={m}
-                type="button"
-                onClick={() => onSelectMetric(m)}
-                className={`px-2.5 py-1 rounded-[6px] text-xs transition-all border ${
-                  isAct
-                    ? 'bg-[#001489] text-white border-[#C69214] shadow-sm font-extrabold'
-                    : isPerf
-                    ? 'bg-[#F8FAFC] text-[#2E3440] border-[#CBD5E1] font-bold hover:border-[#C69214]'
-                    : 'bg-white text-[#64748B] border-[#E2E8F0] font-semibold hover:border-[#CBD5E1] hover:text-[#2E3440]'
-                }`}
-              >
-                {m} ({evaluation.averages[m].toFixed(1)})
-              </button>
-            );
-          })}
         </div>
 
-        {/* Full Soccer Pitch Visual Container (Matching mnt-data-management green pitch canvas) */}
+        {/* Full Soccer Pitch Visual Container */}
         <div
           className="relative rounded-[12px] border-2 border-[#15803D] p-4 sm:p-6 overflow-hidden shadow-inner"
           style={{
@@ -249,10 +287,18 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                     const compVal =
                       comparisonEval?.zones.find((cz) => cz.zone === z.zone)?.metrics[activeMetric] ??
                       val;
-                    const delta = Number((val - compVal).toFixed(2));
-                    const colorSpec = getZoneStatusColor(activeMetric, val);
+                    const deltaVsB = Number((val - compVal).toFixed(2));
+                    const deltaVsRef = Number((val - activeRefStats.mean).toFixed(2));
+                    const colorSpec = getZoneStatusColor(activeMetric, val, activeRefStats);
                     const isSelected = activeZoneObj.zone === z.zone;
                     const hasHotspot = evaluation.hotspots.some((h) => h.zone === z.zone);
+
+                    let displayStr = val.toFixed(1);
+                    if (deltaMode === 'vs-b' && comparisonEval) {
+                      displayStr = deltaVsB > 0 ? `+${deltaVsB.toFixed(1)}` : deltaVsB.toFixed(1);
+                    } else if (deltaMode === 'vs-ref') {
+                      displayStr = deltaVsRef > 0 ? `+${deltaVsRef.toFixed(1)}` : deltaVsRef.toFixed(1);
+                    }
 
                     return (
                       <button
@@ -274,11 +320,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
 
                         {/* Primary Value or Delta */}
                         <span className="text-base sm:text-lg font-extrabold leading-tight">
-                          {deltaMode && comparisonEval
-                            ? delta > 0
-                              ? `+${delta.toFixed(1)}`
-                              : delta.toFixed(1)
-                            : val.toFixed(1)}
+                          {displayStr}
                         </span>
 
                         {/* Coordinates sub-label */}
@@ -290,7 +332,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                         {hasHotspot && (
                           <span
                             className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#DA291C] border border-white flex items-center justify-center text-white text-[10px] font-black shadow"
-                            title="Localized Surface Hotspot"
+                            title="Localized Surface Outlier"
                           >
                             !
                           </span>
@@ -315,20 +357,20 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block border border-emerald-300" />
-              Optimal / Desirable Range
+              Within Reference Band ([{activeRefStats.bandLow.toFixed(1)}–{activeRefStats.bandHigh.toFixed(1)}])
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-amber-500 inline-block border border-amber-300" />
-              Caution / Watch Band
+              Outside ±1 SD Watch Band
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-rose-600 inline-block border border-rose-300" />
-              Critical Hotspot (Grip ≥ 8.0 or Impact ≥ 7.1)
+              Extreme Spectrum Zone (Grip ≥ 8.0 or Impact ≥ 7.1)
             </span>
           </div>
           <div className="font-mono text-[#2E3440]">
             Pitch Mean: <strong>{evaluation.averages[activeMetric].toFixed(2)}</strong> • SD:{' '}
-            <strong>±{evaluation.stdDevs[activeMetric].toFixed(2)}</strong> • Range:{' '}
+            <strong>±{evaluation.stdDevs[activeMetric].toFixed(2)}</strong> • 18-Zone Range:{' '}
             <strong>
               {evaluation.mins[activeMetric].toFixed(1)}–{evaluation.maxs[activeMetric].toFixed(1)}
             </strong>
@@ -361,12 +403,15 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
             </div>
           </div>
 
-          {/* Core Performance Triad in this Zone */}
+          {/* 3 Core Playing Surface Indexes in this Zone */}
           <div className="grid grid-cols-3 gap-2.5 mb-4">
-            {(['Impact', 'Energy', 'Grip'] as IndexName[]).map((m) => {
+            {CORE_INDEX_NAMES.map((m) => {
               const zv = activeZoneObj.metrics[m];
-              const rv = compZoneObj ? compZoneObj.metrics[m] : evaluation.averages[m];
-              const diff = Number((zv - rv).toFixed(2));
+              const bv = compZoneObj ? compZoneObj.metrics[m] : null;
+              const refMean = referenceProfile.metrics[m].mean;
+              const diffVsRef = Number((zv - refMean).toFixed(2));
+              const diffVsB = bv !== null ? Number((zv - bv).toFixed(2)) : null;
+
               return (
                 <div
                   key={m}
@@ -378,64 +423,72 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                   }`}
                 >
                   <div className="text-[10px] font-extrabold uppercase text-[#64748B]">{m}</div>
-                  <div className="text-lg font-black text-[#2E3440]">{zv.toFixed(2)}</div>
-                  <div className="text-[10px] font-mono text-[#64748B] font-semibold">
-                    {diff >= 0 ? `+${diff}` : diff} vs {compZoneObj ? 'REF' : 'Mean'}
+                  <div className="text-lg font-black text-[#2E3440] font-mono">{zv.toFixed(2)}</div>
+                  {diffVsB !== null && bv !== null && (
+                    <div className="text-[10px] font-mono text-[#C69214] font-bold">
+                      {diffVsB >= 0 ? `+${diffVsB}` : diffVsB} vs B ({bv.toFixed(1)})
+                    </div>
+                  )}
+                  <div className="text-[10px] font-mono text-purple-700 font-semibold">
+                    {diffVsRef >= 0 ? `+${diffVsRef}` : diffVsRef} vs REF ({refMean.toFixed(1)})
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Zone Boot Recommendation */}
-          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3 mb-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-extrabold text-[#2E3440] flex items-center gap-1.5">
-                <Footprints className="w-4 h-4 text-[#C69214]" />
-                Zone {activeZoneObj.zone} Footwear Profile
+          {/* Raw Stadia PDF Spectrum Position for Active Metric in this Zone */}
+          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#001489]">
+                {activeSpec.index} Spectrum ({activeSpec.mechanicalProperty})
               </span>
-              <span className={`text-xs font-extrabold px-2 py-0.5 rounded border ${zoneBootRec.badgeBg}`}>
-                {zoneBootRec.code} ({activeZoneObj.metrics.Boot.toFixed(2)})
+              <span className="text-[10px] font-mono font-bold text-[#64748B]">
+                Zone Z{activeZoneObj.zone}: {activeZoneObj.metrics[activeMetric].toFixed(2)} / 10
               </span>
             </div>
-            <div className="text-xs font-bold text-[#001489]">{zoneBootRec.name}</div>
-            <p className="text-[11px] text-[#434C5E] mt-0.5 leading-relaxed">
-              {zoneBootRec.rationale}
-            </p>
-          </div>
 
-          {/* 6 Training Goal Scores in this Zone */}
-          <div>
-            <div className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#64748B] mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#C69214]" />
-              Zone {activeZoneObj.zone} Training Goal Suitability (0–10)
+            {/* Spectrum Visual Bar */}
+            <div className="relative h-3 bg-slate-200 rounded-full overflow-hidden my-2 border border-slate-300">
+              <div
+                className="absolute top-0 bottom-0 bg-emerald-500/25 border-x border-emerald-600/50"
+                style={{
+                  left: `${(activeRefStats.bandLow / 10) * 100}%`,
+                  width: `${((activeRefStats.bandHigh - activeRefStats.bandLow) / 10) * 100}%`,
+                }}
+              />
+              <div
+                className="absolute top-0 bottom-0 w-2.5 -ml-1.25 rounded-full bg-[#001489] border border-white shadow"
+                style={{
+                  left: `${Math.max(3, Math.min(97, (activeZoneObj.metrics[activeMetric] / 10) * 100))}%`,
+                }}
+              />
             </div>
-            <div className="space-y-2">
-              {(['Speed', 'Reaction', 'Power', 'Recovery', 'Metabolic', 'Endurance'] as IndexName[]).map(
-                (tg) => {
-                  const val = activeZoneObj.metrics[tg];
-                  return (
-                    <div
-                      key={tg}
-                      onClick={() => onSelectMetric(tg)}
-                      className="cursor-pointer group flex items-center gap-2"
-                    >
-                      <span className="w-20 text-xs font-bold text-[#434C5E] group-hover:text-[#001489]">
-                        {tg}
-                      </span>
-                      <div className="flex-1 h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#001489] to-[#C69214] rounded-full"
-                          style={{ width: `${Math.min(100, (val / 10) * 100)}%` }}
-                        />
-                      </div>
-                      <span className="w-10 text-right text-xs font-mono font-bold text-[#2E3440]">
-                        {val.toFixed(2)}
-                      </span>
-                    </div>
-                  );
-                }
-              )}
+
+            <div className="grid grid-cols-2 gap-2 mt-2 text-[10px]">
+              <div className="bg-white border border-[#E2E8F0] rounded p-2">
+                <div className="font-black text-[#2E3440] uppercase">
+                  ← {activeSpec.leftSpectrum.title}
+                </div>
+                <div className="text-[#434C5E] mt-0.5">
+                  Effect: <strong>{activeSpec.leftSpectrum.effectOnPlayer}</strong>
+                </div>
+                <div className="text-[#001489] mt-0.5 font-semibold flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3 shrink-0 text-[#C69214]" />
+                  Watch: {activeSpec.leftSpectrum.suggestedInjuryWatch}
+                </div>
+              </div>
+              <div className="bg-white border border-[#E2E8F0] rounded p-2">
+                <div className="font-black text-[#2E3440] uppercase text-right">
+                  {activeSpec.rightSpectrum.title} →
+                </div>
+                <div className="text-[#434C5E] mt-0.5 text-right">
+                  Effect: <strong>{activeSpec.rightSpectrum.effectOnPlayer}</strong>
+                </div>
+                <div className="text-[#DA291C] mt-0.5 font-semibold text-right">
+                  Watch: {activeSpec.rightSpectrum.suggestedInjuryWatch}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -448,7 +501,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440] flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-[#DA291C]" />
-              Localized Surface Hotspots ({evaluation.hotspots.length})
+              Localized Zone Outliers ({evaluation.hotspots.length})
             </h4>
             <span className="text-xs font-mono font-bold text-[#64748B]">
               Uniformity: {evaluation.uniformityScore}/100
@@ -457,8 +510,8 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
 
           {evaluation.hotspots.length === 0 ? (
             <div className="bg-emerald-50 border border-emerald-300 rounded-[8px] p-3 text-xs text-emerald-900 font-medium">
-              All 18 zones on <strong>{evaluation.pitchName}</strong> fall within desirable biomechanical
-              bounds (no Grip spikes ≥ 8.0 or extreme Impact anomalies detected).
+              All 18 zones on <strong>{evaluation.pitchName}</strong> fall within standard bounds for{' '}
+              <strong>Impact</strong>, <strong>Energy</strong>, and <strong>Grip</strong>.
             </div>
           ) : (
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">

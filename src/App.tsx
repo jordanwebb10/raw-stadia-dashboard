@@ -5,8 +5,6 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
-  Compass,
-  Footprints,
   Gauge,
   Layers,
   LucideIcon,
@@ -14,29 +12,26 @@ import {
   Scale,
   Shield,
   ShieldCheck,
-  Sliders,
   Smartphone,
   TrendingUp,
   Upload,
 } from 'lucide-react';
-import { AppendixAModal, MetricInfoTrigger } from './components/AppendixAModal';
-import { EmailArchiveAndKnowledge } from './components/EmailArchiveAndKnowledge';
+import { AppendixAModal } from './components/AppendixAModal';
 import { HeadToHeadVisualComparison } from './components/HeadToHeadVisualComparison';
 import { LongitudinalTimeline } from './components/LongitudinalTimeline';
 import { MobileFieldsideView } from './components/MobileFieldsideView';
 import { PitchHeatmap18Zone } from './components/PitchHeatmap18Zone';
 import { RefGaugeCard, TriadMiniMapMode } from './components/RefGaugeCard';
-import { SurfaceSimulatorLab } from './components/SurfaceSimulatorLab';
-import { TrainingGoalRadar } from './components/TrainingGoalRadar';
-import { INITIAL_EVALUATIONS, REFERENCE_BENCHMARKS } from './data/rawStadiaData';
+import { INITIAL_EVALUATIONS } from './data/rawStadiaData';
 import { IndexName, PitchEvaluation } from './types/rawStadia';
 import {
-  getBootRecommendation,
+  buildReferenceBaselineProfile,
   getPitchSpreadSummary,
   parseRawStadiaCsv,
+  REFERENCE_MODE_OPTIONS,
 } from './utils/rawStadiaEngine';
 
-type ActiveTab = 'comparator' | 'spatial' | 'timeline' | 'simulator' | 'knowledge';
+type ActiveTab = 'comparator' | 'timeline';
 type LayoutMode = 'auto' | 'desktop' | 'mobile';
 
 const MODULE_META: Record<
@@ -52,48 +47,21 @@ const MODULE_META: Record<
 > = {
   comparator: {
     label: '1. Pitch Comparator',
-    subtitle: '0–10 REF Gauges & Boot',
-    topTitle: 'Pitch Comparator & Reference Gauge Engine',
+    subtitle: 'Impact • Energy • Grip + 18-Zone Map',
+    topTitle: 'Pitch Comparator & 18-Zone Spatial Intelligence',
     topSubtitle:
-      'Compare match & training pitches against reference baselines with standardized effect-size magnitudes',
+      'Compare Primary Pitch (A), Compare Pitch (B), and Empirical Reference Range (Mean ± 1 SD) across Impact, Energy, and Grip',
     badge: 'Core',
     icon: Gauge,
   },
-  spatial: {
-    label: '2. 18-Zone Spatial Map',
-    subtitle: 'RAA & RTT Pitch Heatmap',
-    topTitle: '18-Zone Spatial Surface Intelligence Map',
-    topSubtitle:
-      'Interactive 3×6 pitch testing grid, localized hotspot alerts, and zone footwear diagnostics',
-    badge: '18 Zones',
-    icon: Compass,
-  },
   timeline: {
-    label: '3. Camp Progression',
-    subtitle: 'Mean ± SD & Tendon Load',
-    topTitle: 'Camp Session Progression & Clinical Load Inspector',
+    label: '2. Camp Session Progression',
+    subtitle: 'Chronological Mean ± 1 SD',
+    topTitle: 'Camp Session Progression & Spectrum Load Inspector',
     topSubtitle:
-      'Field-independent chronological exposure (Mean ± 1 SD vs. Ideal Range) to evaluate player soreness and tendon loading',
-    badge: 'Clinical',
+      'Field-independent chronological exposure (Mean ± 1 SD vs. Reference Band) across Impact, Energy, and Grip',
+    badge: 'Timeline',
     icon: TrendingUp,
-  },
-  simulator: {
-    label: '4. Surface Simulator',
-    subtitle: 'What-If Grounds Lab',
-    topTitle: 'Interactive Surface Simulator (Grounds & Load Lab)',
-    topSubtitle:
-      'Simulate how mowing, rolling, aeration, or watering alters the 6 Training Goal scores and cleat selection',
-    badge: 'Lab',
-    icon: Sliders,
-  },
-  knowledge: {
-    label: '5. Surface Science Guide',
-    subtitle: 'Index Spectrums & Specs',
-    topTitle: 'Surface Science & Biomechanical Reference',
-    topSubtitle:
-      '0–10 surface index spectrums, RAA/RTT mechanical instrumentation, and Training Goal suitability formulas',
-    badge: 'Guide',
-    icon: BookOpen,
   },
 };
 
@@ -106,7 +74,7 @@ export function App() {
   const [venueCategoryFilter, setVenueCategoryFilter] = useState<'ALL' | 'STADIUM' | 'NTC'>('ALL');
   const [triadMapMode, setTriadMapMode] = useState<TriadMiniMapMode>('stackAB');
 
-  // Appendix A Popup Modal State
+  // Metric Reference Guide Popup Modal State
   const [appendixAOpen, setAppendixAOpen] = useState<boolean>(false);
   const [appendixAHighlight, setAppendixAHighlight] = useState<string | null>(null);
 
@@ -124,12 +92,12 @@ export function App() {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
-  // Default to Orlando Match Day (from Jordan's Sept 26 mockup) vs Minnesota Allianz Field, anchored to NTC Camp Composite REF
+  // Default to Orlando Match Day (Sept 26) vs Minnesota Allianz Field (Oct 6), anchored to NTC Training Baseline (Mean ± 1 SD)
   const [primaryId, setPrimaryId] = useState<string>('orlando-interco-md-2026-09-26');
   const [compareId, setCompareId] = useState<string>('minnesota-allianz-field-md-2026-10-06');
-  const [refId, setRefId] = useState<string>('ref-ntc-camp-composite');
+  const [refModeId, setRefModeId] = useState<string>('ntc-baseline');
 
-  const [activeMetric, setActiveMetric] = useState<IndexName>('Grip');
+  const [activeMetric, setActiveMetric] = useState<IndexName>('Impact');
   const [selectedZone, setSelectedZone] = useState<number | null>(8);
   const [uploadBanner, setUploadBanner] = useState<string | null>(null);
 
@@ -155,23 +123,10 @@ export function App() {
     [evaluations, compareId]
   );
 
-  const refBaseline = useMemo(() => {
-    if (refId === 'USE_COMPARE_PITCH') return compareEval;
-    return (
-      REFERENCE_BENCHMARKS.find((r) => r.id === refId) ||
-      evaluations.find((e) => e.id === refId) ||
-      REFERENCE_BENCHMARKS[0]
-    );
-  }, [refId, compareEval, evaluations]);
-
-  const primaryBoot = useMemo(
-    () =>
-      getBootRecommendation(
-        primaryEval.averages.Boot,
-        primaryEval.hardwareMetrics.studDepthMm,
-        primaryEval.averages.Grip
-      ),
-    [primaryEval]
+  // Build Empirical Reference Baseline Profile (Mean +/- 1 SD)
+  const referenceProfile = useMemo(
+    () => buildReferenceBaselineProfile(refModeId, evaluations),
+    [refModeId, evaluations]
   );
 
   const primarySpread = useMemo(() => getPitchSpreadSummary(primaryEval), [primaryEval]);
@@ -215,16 +170,15 @@ export function App() {
       <div className="min-h-screen bg-[#F8FAFC] text-[#2E3440]">
         <MobileFieldsideView
           evaluations={evaluations}
-          referenceBenchmarks={REFERENCE_BENCHMARKS}
           primaryEval={primaryEval}
           compareEval={compareEval}
-          refBaseline={refBaseline}
+          referenceProfile={referenceProfile}
           primaryId={primaryId}
           compareId={compareId}
-          refId={refId}
+          refModeId={refModeId}
           onSelectPrimary={setPrimaryId}
           onSelectCompare={setCompareId}
-          onSelectRef={setRefId}
+          onSelectRefMode={setRefModeId}
           activeMetric={activeMetric}
           onSelectMetric={setActiveMetric}
           selectedZone={selectedZone}
@@ -312,7 +266,7 @@ export function App() {
                     marginTop: '2px',
                   }}
                 >
-                  Sport Science Hub
+                  Impact • Energy • Grip
                 </div>
               </div>
             )}
@@ -401,7 +355,7 @@ export function App() {
                     outline: 'none',
                   }}
                 >
-                  <option value="ALL">All Camp Evaluations (23)</option>
+                  <option value="ALL">All Camp Evaluations ({evaluations.length})</option>
                   <option value="STADIUM">Match Day Stadiums (5)</option>
                   <option value="NTC">NTC Training Fields (18)</option>
                 </select>
@@ -481,7 +435,7 @@ export function App() {
                 </select>
               </div>
 
-              {/* Purple REF Benchmark Dropdown */}
+              {/* Reference Baseline Mode Dropdown */}
               <div>
                 <label
                   style={{
@@ -492,11 +446,11 @@ export function App() {
                     marginBottom: '2px',
                   }}
                 >
-                  4. PURPLE REF ANCHOR
+                  4. REFERENCE RANGE (MEAN ± 1 SD)
                 </label>
                 <select
-                  value={refId}
-                  onChange={(e) => setRefId(e.target.value)}
+                  value={refModeId}
+                  onChange={(e) => setRefModeId(e.target.value)}
                   style={{
                     width: '100%',
                     background: '#F8F9FA',
@@ -510,14 +464,20 @@ export function App() {
                     outline: 'none',
                   }}
                 >
-                  {REFERENCE_BENCHMARKS.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.pitchName}
-                    </option>
-                  ))}
-                  <option value="USE_COMPARE_PITCH">
-                    Pitch B ({compareEval.pitchName})
-                  </option>
+                  <optgroup label="Empirical Distribution Baselines">
+                    {REFERENCE_MODE_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Single Pitch (Mean ± 1 SD of 18 Zones)">
+                    {evaluations.map((ev) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.date} • {ev.pitchName}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -649,6 +609,79 @@ export function App() {
             );
           })}
 
+          {/* Metric Reference Guide Popup Trigger in Sidebar */}
+          <button
+            type="button"
+            onClick={() => openAppendixA()}
+            title={isSidebarCollapsed ? 'Metric Reference Guide (Popup)' : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+              gap: '10px',
+              padding: isSidebarCollapsed ? '12px 0' : '10px 12px',
+              borderRadius: '8px',
+              background: appendixAOpen ? '#FFFFFF' : 'transparent',
+              border: appendixAOpen ? '1px solid #E5E9F0' : '1px solid transparent',
+              borderLeft: appendixAOpen ? '4px solid #C69214' : '4px solid transparent',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'left',
+              width: '100%',
+              marginTop: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
+              <div
+                style={{
+                  color: '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <BookOpen size={18} strokeWidth={2} />
+              </div>
+              {!isSidebarCollapsed && (
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      color: '#434C5E',
+                    }}
+                  >
+                    3. Metric Reference Guide
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.68rem',
+                      color: '#94A3B8',
+                      marginTop: '1px',
+                    }}
+                  >
+                    3-Page PDF &amp; Mean ± SD
+                  </div>
+                </div>
+              )}
+            </div>
+            {!isSidebarCollapsed && (
+              <span
+                style={{
+                  fontSize: '0.6rem',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '999px',
+                  background: '#F1F5F9',
+                  color: '#434C5E',
+                }}
+              >
+                Popup
+              </span>
+            )}
+          </button>
+
           {/* Mobile Fieldside Module Entry in Sidebar */}
           <button
             type="button"
@@ -693,7 +726,7 @@ export function App() {
                       color: showMobileView ? '#2E3440' : '#434C5E',
                     }}
                   >
-                    6. Mobile Fieldside
+                    4. Mobile Fieldside
                   </div>
                   <div
                     style={{
@@ -702,7 +735,7 @@ export function App() {
                       marginTop: '1px',
                     }}
                   >
-                    Portrait 18-Zone &amp; Cleat
+                    Portrait 18-Zone &amp; Gauges
                   </div>
                 </div>
               )}
@@ -769,10 +802,10 @@ export function App() {
                 />
                 <div>
                   <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#2E3440' }}>
-                    Surface Performance Lab
+                    Raw Stadia Surface Lab
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>
-                    18-Zone RAA &amp; RTT Diagnostics
+                    18-Zone Impact • Energy • Grip
                   </div>
                 </div>
               </div>
@@ -836,7 +869,7 @@ export function App() {
             </div>
           </div>
 
-          {/* Right: Status Pill, Appendix A Popup Button, Data Import, and View Switcher */}
+          {/* Right: Status Pill, Metric Reference Guide Popup Button, Data Import, and View Switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {/* Status Badge */}
             <div
@@ -844,22 +877,22 @@ export function App() {
               style={{
                 alignItems: 'center',
                 gap: '6px',
-                background: '#FEF2F2',
-                border: '1px solid #FECACA',
-                color: '#DA291C',
+                background: '#EFF6FF',
+                border: '1px solid #BFDBFE',
+                color: '#001489',
                 padding: '4px 10px',
                 borderRadius: '6px',
                 fontSize: '0.72rem',
                 fontWeight: 800,
                 letterSpacing: '0.02em',
               }}
-              title="18-Zone RAA & RTT Biomechanical Surface Analytics"
+              title="18-Zone Playing Surface Indexes: Impact, Energy, Grip"
             >
               <ShieldCheck size={13} />
-              <span>RAA &amp; RTT BIOMECHANICAL ENGINE</span>
+              <span>IMPACT • ENERGY • GRIP (0–10)</span>
             </div>
 
-            {/* Appendix A Popup Modal Trigger Button */}
+            {/* Metric Reference Guide Popup Modal Trigger Button */}
             <button
               type="button"
               onClick={() => openAppendixA()}
@@ -876,10 +909,10 @@ export function App() {
                 fontWeight: 800,
                 cursor: 'pointer',
               }}
-              title="Open Appendix A Surface & Physical Metric Definitions Popup"
+              title="Open Raw Stadia 3-Page Index Guide & Reference Range Methodology"
             >
               <Scale size={13} color="#C69214" />
-              <span>Appendix A: Definitions</span>
+              <span>Metric Reference Guide</span>
             </button>
 
             {/* Data Import Button */}
@@ -908,7 +941,7 @@ export function App() {
               }}
             >
               <Upload size={13} color="#C69214" />
-              <span className="hidden sm:inline">Import Data</span>
+              <span className="hidden sm:inline">Import CSV</span>
             </button>
 
             {/* Desktop Hub / Mobile Fieldside Toggle Button */}
@@ -1000,7 +1033,8 @@ export function App() {
                         .filter((e) => !e.pitchName.startsWith('USSF Super'))
                         .map((e) => (
                           <option key={e.id} value={e.id}>
-                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
+                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)} | Grip{' '}
+                            {e.averages.Grip.toFixed(1)})
                           </option>
                         ))}
                     </optgroup>
@@ -1045,7 +1079,8 @@ export function App() {
                         .filter((e) => !e.pitchName.startsWith('USSF Super'))
                         .map((e) => (
                           <option key={e.id} value={e.id}>
-                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
+                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)} | Grip{' '}
+                            {e.averages.Grip.toFixed(1)})
                           </option>
                         ))}
                     </optgroup>
@@ -1061,47 +1096,57 @@ export function App() {
                   </select>
                 </div>
 
-                {/* Purple REF Line Anchor */}
+                {/* Reference Range Baseline Mode Selector */}
                 <div className="flex flex-col">
                   <label className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-purple-700 mb-0.5">
-                    Purple REF Gauge Anchor
+                    Reference Range &amp; Purple REF Line
                   </label>
                   <select
-                    value={refId}
-                    onChange={(e) => setRefId(e.target.value)}
+                    value={refModeId}
+                    onChange={(e) => setRefModeId(e.target.value)}
                     className="bg-purple-50/60 border border-purple-300 rounded-[6px] px-2.5 py-1.5 text-xs font-bold text-purple-900 focus:outline-none focus:border-purple-600 cursor-pointer"
                   >
-                    <optgroup label="NTC Reference Baselines">
-                      {REFERENCE_BENCHMARKS.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.pitchName} (Imp {r.averages.Impact.toFixed(1)} | Grip{' '}
-                          {r.averages.Grip.toFixed(1)})
+                    <optgroup label="Empirical Distribution Baselines (Mean ± 1 SD)">
+                      {REFERENCE_MODE_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
                         </option>
                       ))}
                     </optgroup>
-                    <optgroup label="Dynamic Comparison">
-                      <option value="USE_COMPARE_PITCH">
-                        Anchor REF to Pitch B ({compareEval.pitchName})
-                      </option>
+                    <optgroup label="Single Pitch Baseline (Mean ± 1 SD of 18 Zones)">
+                      {evaluations.map((ev) => (
+                        <option key={ev.id} value={ev.id}>
+                          {ev.date} • {ev.pitchName}
+                        </option>
+                      ))}
                     </optgroup>
                   </select>
                 </div>
               </div>
 
-              {/* Right Quick Footwear & Within-Pitch Spread Status Pill */}
+              {/* Right Quick Reference Range Summary Pill */}
               <div className="flex items-center gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] px-3.5 py-2">
-                <Footprints className="w-4 h-4 text-[#C69214] shrink-0" />
                 <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] flex items-center gap-1">
-                    <span>Active Cleat Callout ({primaryEval.pitchName})</span>
-                    <MetricInfoTrigger metricKey="Boot" onOpenModal={openAppendixA} />
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-purple-800 flex items-center gap-1.5">
+                    <span>Active Reference Band ({referenceProfile.shortLabel} • Mean ± 1 SD)</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs font-black text-[#2E3440]">{primaryBoot.name}</span>
-                    <span
-                      className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${primaryBoot.badgeBg}`}
-                    >
-                      {primaryBoot.code} • {primaryEval.hardwareMetrics.studDepthMm}mm
+                  <div className="flex flex-wrap items-center gap-2.5 mt-0.5 font-mono text-xs">
+                    <span className="text-[#2E3440]">
+                      <strong className="text-[#001489]">Impact:</strong>{' '}
+                      {referenceProfile.metrics.Impact.bandLow.toFixed(2)}–
+                      {referenceProfile.metrics.Impact.bandHigh.toFixed(2)}
+                    </span>
+                    <span className="text-[#CBD5E1]">|</span>
+                    <span className="text-[#2E3440]">
+                      <strong className="text-[#001489]">Energy:</strong>{' '}
+                      {referenceProfile.metrics.Energy.bandLow.toFixed(2)}–
+                      {referenceProfile.metrics.Energy.bandHigh.toFixed(2)}
+                    </span>
+                    <span className="text-[#CBD5E1]">|</span>
+                    <span className="text-[#2E3440]">
+                      <strong className="text-[#001489]">Grip:</strong>{' '}
+                      {referenceProfile.metrics.Grip.bandLow.toFixed(2)}–
+                      {referenceProfile.metrics.Grip.bandHigh.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -1130,36 +1175,33 @@ export function App() {
                   When opened on a smartphone (
                   <code className="text-[#001489] font-bold">&lt; 768px</code>), the hub
                   automatically launches into this dedicated{' '}
-                  <strong className="text-[#2E3440]">Mobile Fieldside View</strong> designed for
-                  rapid pitch-side and locker room decision-making:
+                  <strong className="text-[#2E3440]">Mobile Fieldside View</strong> focused strictly
+                  on the 3 Raw Stadia Playing Surface Indexes (<strong>Impact</strong>,{' '}
+                  <strong>Energy</strong>, and <strong>Grip</strong>):
                 </p>
                 <div className="space-y-3 text-xs text-[#434C5E]">
                   <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[8px] p-3.5">
                     <strong className="text-[#001489] block text-sm font-extrabold mb-0.5">
-                      1. Portrait Goal-to-Goal 18-Zone Pitch Map
+                      1. Stacked 0–10 REF Gauges (Impact • Energy • Grip)
+                    </strong>
+                    Compares <strong>Pitch A</strong>, <strong>Pitch B</strong>, and the{' '}
+                    <strong>Empirical Reference Band (Mean ± 1 SD)</strong> with expandable 18-zone
+                    mini-maps and Raw Stadia PDF spectrum watch tags.
+                  </div>
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#C69214] rounded-[8px] p-3.5">
+                    <strong className="text-[#92400E] block text-sm font-extrabold mb-0.5">
+                      2. Portrait Goal-to-Goal 18-Zone Pitch Map
                     </strong>
                     Rotates the 3×6 Raw Stadia grid into a vertical Goal-to-Goal orientation (3
                     columns wide × 6 rows long) so every zone button is a 56px thumb target without
                     horizontal pinch-zooming.
                   </div>
-                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#C69214] rounded-[8px] p-3.5">
-                    <strong className="text-[#92400E] block text-sm font-extrabold mb-0.5">
-                      2. Stacked 0–10 REF Gauges &amp; Instant Cleat Callout
-                    </strong>
-                    Displays the recommended boot soleplate (
-                    <code className="text-[#001489] font-bold">FG-L</code>,{' '}
-                    <code className="text-[#001489] font-bold">Mixed</code>,{' '}
-                    <code className="text-[#001489] font-bold">FG-S</code>), Stud Depth (mm),
-                    Hardness (Gm), and purple <code className="text-purple-700 font-bold">REF</code>{' '}
-                    gauges with collapsible 18-zone mini-maps.
-                  </div>
                   <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-emerald-600 rounded-[8px] p-3.5">
                     <strong className="text-emerald-800 block text-sm font-extrabold mb-0.5">
-                      3. Thumb-Zone Bottom Tab Bar
+                      3. Embedded 3-Page PDF Guide &amp; Reference Methodology
                     </strong>
-                    One-handed navigation between <strong>Fieldside</strong>,{' '}
-                    <strong>18-Zone Map</strong>, <strong>Radar/Sim</strong>,{' '}
-                    <strong>Camp Log</strong>, and <strong>Appendix A Guide</strong>.
+                    Quick pitch-side access to the official Raw Stadia definitions for{' '}
+                    <strong>Impact</strong>, <strong>Energy</strong>, and <strong>Grip</strong>.
                   </div>
                 </div>
                 <button
@@ -1175,16 +1217,15 @@ export function App() {
               <div className="lg:col-span-7 flex justify-center">
                 <MobileFieldsideView
                   evaluations={evaluations}
-                  referenceBenchmarks={REFERENCE_BENCHMARKS}
                   primaryEval={primaryEval}
                   compareEval={compareEval}
-                  refBaseline={refBaseline}
+                  referenceProfile={referenceProfile}
                   primaryId={primaryId}
                   compareId={compareId}
-                  refId={refId}
+                  refModeId={refModeId}
                   onSelectPrimary={setPrimaryId}
                   onSelectCompare={setCompareId}
-                  onSelectRef={setRefId}
+                  onSelectRefMode={setRefModeId}
                   activeMetric={activeMetric}
                   onSelectMetric={setActiveMetric}
                   selectedZone={selectedZone}
@@ -1208,12 +1249,12 @@ export function App() {
                           Primary Pitch A • {primaryEval.date}
                         </span>
                         <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-                          Session Objective: {primaryEval.sessionObjective}
+                          Session Context: {primaryEval.sessionObjective}
                         </span>
                         <span
                           className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${primarySpread.badgeClass}`}
                         >
-                          {primarySpread.consistencyLabel}
+                          {primarySpread.consistencyLabel} (Uniformity: {primaryEval.uniformityScore}%)
                         </span>
                       </div>
                       <h2 className="text-2xl font-black text-[#2E3440]">
@@ -1227,44 +1268,40 @@ export function App() {
                       </p>
                     </div>
 
-                    {/* Boot Recommendation Card on Top Right */}
-                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3.5 min-w-[310px] flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] flex items-center gap-1.5">
-                          <Footprints className="w-3.5 h-3.5 text-[#C69214]" />
-                          Footwear Recommendation
-                          <MetricInfoTrigger metricKey="Boot" onOpenModal={openAppendixA} />
-                        </span>
-                        <span
-                          className={`text-xs font-extrabold px-2 py-0.5 rounded border ${primaryBoot.badgeBg}`}
+                    {/* 3 Core Indexes Quick Readout on Top Right */}
+                    <div className="grid grid-cols-3 gap-2.5 min-w-[330px] font-mono">
+                      {(['Impact', 'Energy', 'Grip'] as IndexName[]).map((m) => (
+                        <div
+                          key={m}
+                          onClick={() => setActiveMetric(m)}
+                          className="cursor-pointer bg-[#F8FAFC] hover:border-[#C69214] border border-[#E2E8F0] rounded-[8px] p-3 text-center transition-all"
                         >
-                          {primaryBoot.code} • {primaryEval.averages.Boot.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="text-sm font-black text-[#2E3440]">{primaryBoot.name}</div>
-                      <div className="text-[11px] text-[#64748B] font-semibold mt-0.5">
-                        Stud Depth:{' '}
-                        <strong className="text-[#001489]">
-                          {primaryEval.hardwareMetrics.studDepthMm} mm
-                        </strong>{' '}
-                        • Hardness:{' '}
-                        <strong className="text-[#92400E]">
-                          {primaryEval.hardwareMetrics.hardnessGm} Gm
-                        </strong>
-                      </div>
+                          <div className="text-[10px] font-sans font-extrabold uppercase text-[#64748B]">
+                            {m}
+                          </div>
+                          <div className="text-lg font-black text-[#001489]">
+                            {primaryEval.averages[m].toFixed(2)}
+                          </div>
+                          <div className="text-[10px] text-[#434C5E] font-semibold">
+                            ±{primaryEval.stdDevs[m].toFixed(2)} SD
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Core Surface Performance Triad (Comparing Pitch A + Pitch B + Purple REF) */}
+                  {/* Section 1A: Core Surface Performance Triad (Comparing Pitch A + Pitch B + Empirical REF) */}
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-white border border-[#E2E8F0] rounded-[10px] px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <Layers className="w-4 h-4 text-[#C69214]" />
                         <h3 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
-                          Core Surface Performance Triad — 3-Pitch Comparison:{' '}
+                          1A. Core Surface Performance Triad — 3-Pitch Comparison:{' '}
                           <span className="text-[#001489]">{primaryEval.pitchName}</span> vs{' '}
                           <span className="text-[#92400E]">{compareEval.pitchName}</span> vs{' '}
-                          <span className="text-purple-700">{refBaseline.pitchName} (REF)</span>
+                          <span className="text-purple-700">
+                            {referenceProfile.shortLabel} (Mean ± 1 SD)
+                          </span>
                         </h3>
                       </div>
 
@@ -1305,14 +1342,14 @@ export function App() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <RefGaugeCard
                         metric="Impact"
-                        subtitle="Compaction & Force Attenuation"
                         value={primaryEval.averages.Impact}
+                        primarySd={primaryEval.stdDevs.Impact}
                         primaryLabel={primaryEval.pitchName}
                         compareValue={compareEval.averages.Impact}
+                        compareSd={compareEval.stdDevs.Impact}
                         compareLabel={compareEval.pitchName}
-                        refValue={refBaseline.averages.Impact}
-                        refLabel={refBaseline.pitchName}
-                        optimalRange={[4.0, 6.0]}
+                        refStats={referenceProfile.metrics.Impact}
+                        refLabel={referenceProfile.shortLabel}
                         zones={primaryEval.zones}
                         compareZones={compareEval.zones}
                         miniMapMode={triadMapMode}
@@ -1325,14 +1362,14 @@ export function App() {
                       />
                       <RefGaugeCard
                         metric="Energy"
-                        subtitle="Elastic Rebound & Restitution"
                         value={primaryEval.averages.Energy}
+                        primarySd={primaryEval.stdDevs.Energy}
                         primaryLabel={primaryEval.pitchName}
                         compareValue={compareEval.averages.Energy}
+                        compareSd={compareEval.stdDevs.Energy}
                         compareLabel={compareEval.pitchName}
-                        refValue={refBaseline.averages.Energy}
-                        refLabel={refBaseline.pitchName}
-                        optimalRange={[3.8, 5.5]}
+                        refStats={referenceProfile.metrics.Energy}
+                        refLabel={referenceProfile.shortLabel}
                         zones={primaryEval.zones}
                         compareZones={compareEval.zones}
                         miniMapMode={triadMapMode}
@@ -1345,14 +1382,14 @@ export function App() {
                       />
                       <RefGaugeCard
                         metric="Grip"
-                        subtitle="Rotational & Linear Traction"
                         value={primaryEval.averages.Grip}
+                        primarySd={primaryEval.stdDevs.Grip}
                         primaryLabel={primaryEval.pitchName}
                         compareValue={compareEval.averages.Grip}
+                        compareSd={compareEval.stdDevs.Grip}
                         compareLabel={compareEval.pitchName}
-                        refValue={refBaseline.averages.Grip}
-                        refLabel={refBaseline.pitchName}
-                        optimalRange={[5.5, 7.2]}
+                        refStats={referenceProfile.metrics.Grip}
+                        refLabel={referenceProfile.shortLabel}
                         zones={primaryEval.zones}
                         compareZones={compareEval.zones}
                         miniMapMode={triadMapMode}
@@ -1366,67 +1403,61 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Visual Head-to-Head Pitch A vs Pitch B vs REF (12-Column Radar + 2x3 Dual Bar Grid) */}
+                  {/* Section 1B: Interactive 18-Zone Spatial Surface Map */}
+                  <div id="spatial-18-zone-section">
+                    <PitchHeatmap18Zone
+                      evaluation={primaryEval}
+                      comparisonEval={compareEval}
+                      referenceProfile={referenceProfile}
+                      activeMetric={activeMetric}
+                      onSelectMetric={setActiveMetric}
+                      selectedZone={selectedZone}
+                      onSelectZone={setSelectedZone}
+                    />
+                  </div>
+
+                  {/* Section 1C: Visual Head-to-Head Pitch A vs Pitch B vs REF (3-Axis Triad + Visual Spectrum Bars) */}
                   <HeadToHeadVisualComparison
                     primaryEval={primaryEval}
                     compareEval={compareEval}
-                    refBaseline={refBaseline}
-                    onOpenSpatialMap={() => setActiveTab('spatial')}
+                    referenceProfile={referenceProfile}
+                    onOpenSpatialMap={() => {
+                      const el = document.getElementById('spatial-18-zone-section');
+                      el?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     onOpenAppendixA={openAppendixA}
                   />
-
-                  {/* Full-Width 6-Axis Training Goal Radar & Visual Dual-Bar Suitability Matrix */}
-                  <TrainingGoalRadar
-                    primaryEval={primaryEval}
-                    compareEval={compareEval}
-                    refBaseline={refBaseline}
-                    onOpenSimulator={() => setActiveTab('simulator')}
-                  />
                 </>
-              )}
-
-              {activeTab === 'spatial' && (
-                <PitchHeatmap18Zone
-                  evaluation={primaryEval}
-                  comparisonEval={refBaseline}
-                  activeMetric={activeMetric}
-                  onSelectMetric={setActiveMetric}
-                  selectedZone={selectedZone}
-                  onSelectZone={setSelectedZone}
-                />
               )}
 
               {activeTab === 'timeline' && (
                 <LongitudinalTimeline
                   evaluations={evaluations}
-                  refBaseline={refBaseline}
+                  referenceProfile={referenceProfile}
                   selectedPrimaryId={primaryId}
                   selectedCompareId={compareId}
                   onSelectPrimary={(id) => {
                     setPrimaryId(id);
+                    setActiveTab('comparator');
                   }}
                   onSelectCompare={(id) => {
                     setCompareId(id);
+                    setActiveTab('comparator');
                   }}
                   onOpenAppendixA={openAppendixA}
                 />
               )}
-
-              {activeTab === 'simulator' && (
-                <SurfaceSimulatorLab primaryEval={primaryEval} refBaseline={refBaseline} />
-              )}
-
-              {activeTab === 'knowledge' && <EmailArchiveAndKnowledge />}
             </>
           )}
         </main>
       </div>
 
-      {/* Contextual Appendix A Popup Modal */}
+      {/* Contextual Metric Reference Guide Popup Modal */}
       <AppendixAModal
         isOpen={appendixAOpen}
         onClose={() => setAppendixAOpen(false)}
         highlightedKey={appendixAHighlight}
+        referenceProfile={referenceProfile}
       />
     </div>
   );

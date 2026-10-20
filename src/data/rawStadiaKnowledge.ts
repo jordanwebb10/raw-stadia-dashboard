@@ -1,699 +1,175 @@
-import { EmailReport, IndexKnowledgeSpec } from '../types/rawStadia';
+import { IndexKnowledgeSpec, IndexName } from '../types/rawStadia';
 
+/**
+ * Verbatim specifications from the 3-page document:
+ * "Raw Stadia | US Soccer - Indexes.pdf" (IMPACT, ENERGY, GRIP)
+ */
 export const RAW_STADIA_KNOWLEDGE_SPECS: IndexKnowledgeSpec[] = [
   {
     name: 'Impact',
-    category: 'Performance Index',
-    shortLabel: 'Surface Impact & Compaction',
-    unitOrScale: '0.0 – 10.0 Index (Optimal: 4.0 – 6.0)',
-    optimalRange: [4.0, 6.0],
-    cautionLow: 2.8,
-    cautionHigh: 7.0,
-    formulaDisplay: 'Derived from RAA: f(Hardness Gm, Shock Absorption %, Surface Deformation mm)',
+    shortLabel: 'Surface Layer Compaction & Force Attenuation',
+    subtitle:
+      "The surface's impact is dependent on the compaction of the different surface layers.",
     hardwareTester: 'Raw Artificial Athlete (RAA)',
-    mechanicalProperties: ['Hardness (Gm)', 'Shock Absorption (%)', 'Vertical Surface Deformation (mm)'],
+    mechanicalProperties: ['Hardness', 'Shock Absorption', 'Surface Deformation'],
     quote:
       'Harder surfaces are known to promote higher running speeds and sprint distance, but expose players to increased levels of peak loading and musculoskeletal stress.',
-    description:
-      'The surface’s Impact is dependent on the compaction of the different surface layers. It quantifies the attenuation of peak deceleration forces when a player’s foot strikes the turf.',
     lowSpectrum: {
-      title: 'SOFT FIELD (Low Impact < 3.8)',
-      rangeLabel: '0.0 – 3.7',
-      mechanicalOrPhysiologicalLoad: 'Reduced Mechanical Load',
-      surfaceFeel: 'Soft | Compliant',
-      recommendedUse: 'Recovery | Rehab',
-      injuryRiskFocus: 'Muscles | Ligaments (Fatigue)',
-      tacticalUse: 'Maintain Block',
+      title: 'SOFT FIELD',
+      loadLabel: 'REDUCED MECHANICAL LOAD',
+      feelsLabel: 'SOFT | COMPLIANT',
+      usedFor: 'RECOVERY | REHAB',
+      injuryRiskWatch: 'MUSCLES | LIGAMENTS',
+      tacticalUse: 'MAINTAIN BLOCK',
     },
     highSpectrum: {
-      title: 'HARD FIELD (High Impact > 6.2)',
-      rangeLabel: '6.3 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Increased Mechanical Load',
-      surfaceFeel: 'Hard | Shocking',
-      recommendedUse: 'Building Robustness / Top Speed',
-      injuryRiskFocus: 'Tendons | Joints (Peak Stress)',
-      tacticalUse: 'Transition | Counter',
+      title: 'HARD FIELD',
+      loadLabel: 'INCREASED MECHANICAL LOAD',
+      feelsLabel: 'HARD | SHOCKING',
+      usedFor: 'BUILDING ROBUSTNESS',
+      injuryRiskWatch: 'TENDONS | JOINTS',
+      tacticalUse: 'TRANSITION | COUNTER',
     },
   },
   {
     name: 'Energy',
-    category: 'Performance Index',
-    shortLabel: 'Elastic Energy Return',
-    unitOrScale: '0.0 – 10.0 Index (Optimal: 3.8 – 5.5)',
-    optimalRange: [3.8, 5.5],
-    cautionLow: 3.4,
-    cautionHigh: 6.5,
-    formulaDisplay: 'Derived from RAA: f(Energy Restitution %, Spring Rate N/mm)',
+    shortLabel: 'Surface Elastic Properties & Returned Energy',
+    subtitle:
+      "The surface's energy is dependent on the elastic properties of the surfaces, the returned energy can be used to facilitate performance.",
     hardwareTester: 'Raw Artificial Athlete (RAA)',
-    mechanicalProperties: ['Energy Restitution (%)', 'Spring Rate (kN/m)', 'Rebound Velocity'],
+    mechanicalProperties: ['Energy Restitution', 'Spring Rate'],
     quote:
-      'Rebounding surfaces are known to return more energy back to players and facilitate endurance and speed. However, dependent on the speed of the returned energy, low or high speed running is promoted.',
-    description:
-      'The surface’s Energy is dependent on the elastic properties of the rootzone and turf canopy. It represents how much mechanical energy is returned vs. absorbed upon foot strike, directly governing the metabolic cost of running.',
+      'Rebounding surfaces are known to return more energy back to players and facilitate endurance and speed. However, dependent on the speed of the returned energy low or high speed running is promoted.',
     lowSpectrum: {
-      title: 'DISSIPATING FIELD (Low Energy < 3.6)',
-      rangeLabel: '0.0 – 3.5',
-      mechanicalOrPhysiologicalLoad: 'Increased Physiological Load',
-      surfaceFeel: 'Energy-Absorbing | Heavy',
-      recommendedUse: 'Endurance Training',
-      injuryRiskFocus: 'Calves | Cramps',
-      tacticalUse: 'Low Paced Game',
+      title: 'DISSIPATING FIELD',
+      loadLabel: 'INCREASED PHYSIOLOGICAL LOAD',
+      feelsLabel: 'REDUCED MAXIMAL SPEED',
+      secondaryAttributeLabel: 'SPEED PROFILE',
+      secondaryAttributeValue: 'REDUCED MAXIMAL SPEED',
+      usedFor: 'ENDURANCE TRAINING',
+      injuryRiskWatch: 'CALVES | CRAMPS',
+      tacticalUse: 'LOW PACED GAME',
     },
     highSpectrum: {
-      title: 'REBOUNDING FIELD (High Energy > 4.5)',
-      rangeLabel: '4.6 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Reduced Physiological Load',
-      surfaceFeel: 'Springy | Responsive',
-      recommendedUse: 'High Volume Exposure',
-      injuryRiskFocus: 'Overload (High High-Speed Volume)',
-      tacticalUse: 'High Paced Game',
+      title: 'REBOUNDING FIELD',
+      loadLabel: 'REDUCED PHYSIOLOGICAL LOAD',
+      feelsLabel: 'INCREASED MAXIMAL SPEED',
+      secondaryAttributeLabel: 'SPEED PROFILE',
+      secondaryAttributeValue: 'INCREASED MAXIMAL SPEED',
+      usedFor: 'HIGH VOLUME EXPOSURE',
+      injuryRiskWatch: 'OVERLOAD',
+      tacticalUse: 'HIGH PACED GAME',
     },
   },
   {
     name: 'Grip',
-    category: 'Performance Index',
-    shortLabel: 'Rotational & Linear Traction',
-    unitOrScale: '0.0 – 10.0 Index (Optimal: 5.5 – 7.2)',
-    optimalRange: [5.5, 7.2],
-    cautionLow: 5.0,
-    cautionHigh: 8.0,
-    formulaDisplay: 'Derived from RTT: f(Rotational Traction Nm, Stud Depth mm, Initial Grip, Rotational Stiffness)',
+    shortLabel: 'Stud Penetration Ease & Available Traction',
+    subtitle:
+      "The surface's grip is dependent on the ease of stud penetration in the soil and available grip.",
     hardwareTester: 'Rotational Traction Tester (RTT)',
     mechanicalProperties: [
-      'Stud Depth (mm)',
-      'Rotational Resistance / Peak Torque (Nm)',
-      'Initial Grip (Nm/deg)',
+      'Stud Depth',
+      'Rotational Traction',
+      'Initial Grip',
       'Rotational Stiffness',
     ],
     quote:
       'Sufficient grip is key for peak performance, whilst excessive or insufficient grip exposes players to risk of injury or slipping whilst changing direction.',
-    description:
-      'The surface’s Grip is dependent on the ease of stud penetration into the soil and the shear strength of the turf rootzone during cutting, decelerating, and pivoting maneuvers.',
     lowSpectrum: {
-      title: 'LOW TRACTION FIELD (Low Grip < 5.2)',
-      rangeLabel: '0.0 – 5.1',
-      mechanicalOrPhysiologicalLoad: 'Increased Metabolic Load',
-      surfaceFeel: 'Slick | Loose Shear',
-      recommendedUse: 'Linear Power Generation',
-      injuryRiskFocus: 'Groin | Slipping',
-      tacticalUse: 'Blocked Defense',
+      title: 'LOW TRACTION FIELD',
+      loadLabel: 'INCREASED METABOLIC LOAD',
+      feelsLabel: 'REDUCED AGILITY',
+      secondaryAttributeLabel: 'MOVEMENT PROFILE',
+      secondaryAttributeValue: 'REDUCED AGILITY',
+      usedFor: 'POWER GENERATION',
+      injuryRiskWatch: 'GROIN | SLIPPING',
+      tacticalUse: 'BLOCKED DEFENSE',
     },
     highSpectrum: {
-      title: 'HIGH TRACTION FIELD (High Grip > 7.5)',
-      rangeLabel: '7.6 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Reduced Metabolic Load',
-      surfaceFeel: 'Aggressive Bite | Locked',
-      recommendedUse: 'Reactivity | Small-Sided Games (SSG)',
-      injuryRiskFocus: 'Ankle | Knee (Foot Fixation > 8.0)',
-      tacticalUse: '1v1 | Dribbling',
-    },
-  },
-  {
-    name: 'Boot',
-    category: 'Footwear Index',
-    shortLabel: 'Soleplate & Stud Selection Index',
-    unitOrScale: '0.0 – 10.0 Scale (SG -> Mixed -> FG-L -> FG-S -> AG)',
-    optimalRange: [2.5, 5.5],
-    cautionLow: 2.0,
-    cautionHigh: 6.5,
-    formulaDisplay: 'Boot ≈ 10.1 − Grip + f(Stud Depth mm, Surface Hardness Gm)',
-    hardwareTester: 'Rotational Traction Tester (RTT)',
-    mechanicalProperties: ['Stud Penetration Depth (mm)', 'Peak Rotational Torque (Nm)', 'Rootzone Shear'],
-    quote:
-      'Matching stud geometry and length to rootzone penetration depth prevents both loss-of-footing slips (too little penetration) and excessive rotational torque fixation (too much bite).',
-    description:
-      'Translates RTT Stud Depth (mm) and Rotational Resistance (Nm) into an actionable 0–10 cleat recommendation scale: 0–2.2 Soft Ground (SG Metal), 2.2–4.0 Mixed (SG/FG Hybrid), 4.0–5.3 Firm Ground Long (FG-L), 5.3–7.2 Firm Ground Short/Conical (FG-S), and >7.2 Artificial Grass (AG).',
-    lowSpectrum: {
-      title: 'SOFT / MIXED STUD PROFILE (0.0 – 4.0)',
-      rangeLabel: '0.0 – 4.0 (SG / Mixed)',
-      mechanicalOrPhysiologicalLoad: 'Deep Penetration (>11mm)',
-      surfaceFeel: 'Plush / High Canopy',
-      recommendedUse: 'SG Metal or Mixed Hybrid Soleplates',
-      injuryRiskFocus: 'Slipping if wearing short FG studs',
-      tacticalUse: 'Full Pitch / Wet or Lush Grass',
-    },
-    highSpectrum: {
-      title: 'FIRM / CONICAL SHORT PROFILE (4.0 – 10.0)',
-      rangeLabel: '4.0 – 10.0 (FG-L / FG-S / AG)',
-      mechanicalOrPhysiologicalLoad: 'Shallow Penetration (<9.5mm)',
-      surfaceFeel: 'Compact / Firm Rootzone',
-      recommendedUse: 'FG Long (4.0–5.3) or Sharp Conical FG-S (>5.3)',
-      injuryRiskFocus: 'Joint Fixation & Plantar Pressure with long blades',
-      tacticalUse: 'Fast Match-Day Stadium Surfaces',
-    },
-  },
-  {
-    name: 'Speed',
-    category: 'Training Goal Index',
-    shortLabel: 'Maximal Velocity & Sprint Suitability',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [5.0, 7.5],
-    cautionLow: 4.5,
-    cautionHigh: 8.5,
-    formulaDisplay: 'Speed = 0.5 × Impact + 0.5 × Energy + 0.75',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Surface Hardness (Gm)', 'Energy Restitution (%)', 'Ground Contact Time'],
-    quote:
-      'Firm, rebounding pitches minimize ground contact time and return elastic energy, promoting peak sprinting velocity and transition speed.',
-    description:
-      'Quantifies how strongly the pitch promotes high-velocity sprinting and fast match-day pace. Directly proportional to the average of Impact and Energy.',
-    lowSpectrum: {
-      title: 'LOW SPEED ALIGNMENT (< 4.8)',
-      rangeLabel: '0.0 – 4.7',
-      mechanicalOrPhysiologicalLoad: 'Longer Ground Contact Time',
-      surfaceFeel: 'Soft & Dissipating',
-      recommendedUse: 'Recovery or Slow Tactical Walk-Throughs',
-      injuryRiskFocus: 'Hamstring fatigue if forcing max sprints',
-      tacticalUse: 'Possession / Low-Tempo Build',
-    },
-    highSpectrum: {
-      title: 'HIGH SPEED ALIGNMENT (> 5.5)',
-      rangeLabel: '5.5 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Fast Elastic Rebound & Short Contact',
-      surfaceFeel: 'Firm & Fast (Match Day)',
-      recommendedUse: 'Match Day / Max Velocity Sprint Exposure',
-      injuryRiskFocus: 'Peak Tendon & Eccentric Deceleration Load',
-      tacticalUse: 'Direct Transition / High-Pace Counter',
-    },
-  },
-  {
-    name: 'Endurance',
-    category: 'Training Goal Index',
-    shortLabel: 'Aerobic & Physiological Conditioning',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [6.0, 8.0],
-    cautionLow: 5.0,
-    cautionHigh: 8.5,
-    formulaDisplay: 'Endurance = 12.0 − Speed = 11.25 − 0.5 × (Impact + Energy)',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Energy Absorption (%)', 'Surface Deformation (mm)'],
-    quote:
-      'Softer, energy-dissipating surfaces increase the physiological cost of locomotion while protecting joints from peak mechanical shock—ideal for aerobic endurance blocks.',
-    description:
-      'Complementary to Speed (Endurance + Speed = 12.0). Higher values indicate a surface that absorbs mechanical impact and requires greater muscular work per stride, elevating heart-rate and aerobic stimulus at lower mechanical joint stress.',
-    lowSpectrum: {
-      title: 'LOW ENDURANCE STIMULUS (< 5.8)',
-      rangeLabel: '0.0 – 5.7',
-      mechanicalOrPhysiologicalLoad: 'High Mechanical / Lower Cardio Cost',
-      surfaceFeel: 'Hard & Rebounding',
-      recommendedUse: 'Speed & Match Day Taper',
-      injuryRiskFocus: 'Joint / Tendon Overload on Long Runs',
-      tacticalUse: 'High-Speed Sprinting',
-    },
-    highSpectrum: {
-      title: 'HIGH ENDURANCE STIMULUS (> 6.5)',
-      rangeLabel: '6.5 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Elevated Cardiovascular Demand, Low Joint Shock',
-      surfaceFeel: 'Compliant & Energy-Absorbing',
-      recommendedUse: 'Extensive Endurance & Aerobic Conditioning',
-      injuryRiskFocus: 'Calf Tightness / Muscular Fatigue',
-      tacticalUse: 'Sustained Pressing / High-Volume Running',
-    },
-  },
-  {
-    name: 'Recovery',
-    category: 'Training Goal Index',
-    shortLabel: 'Regeneration & Low-Load Suitability',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [5.4, 7.5],
-    cautionLow: 4.8,
-    cautionHigh: 8.5,
-    formulaDisplay: 'Recovery = 5.75 + 0.5 × (Energy − Impact)',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Shock Absorption (%)', 'Energy Restitution (%)'],
-    quote:
-      'Ideal recovery pitches combine low Impact (compliant shock attenuation) with good Energy return so athletes neither suffer joint pounding nor fight a heavy, fatiguing bog.',
-    description:
-      'Maximized when Energy is high and Impact is low. Identifies pitches that protect joints and tendons (low Impact) without imposing excessive physiological drag (good Energy).',
-    lowSpectrum: {
-      title: 'POOR RECOVERY PROFILE (< 5.0)',
-      rangeLabel: '0.0 – 4.9',
-      mechanicalOrPhysiologicalLoad: 'High Impact Shock relative to Energy Return',
-      surfaceFeel: 'Jarring or Dead/Hard',
-      recommendedUse: 'Avoid for MD+1 / Arrival Regeneration',
-      injuryRiskFocus: 'Delayed Soreness & Joint Inflammation',
-      tacticalUse: 'Short Set-Piece Walk-Through Only',
-    },
-    highSpectrum: {
-      title: 'OPTIMAL RECOVERY PROFILE (> 5.5)',
-      rangeLabel: '5.5 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Low Joint Stress + Smooth Elastic Rebound',
-      surfaceFeel: 'Cushioned & Springy',
-      recommendedUse: 'Camp Arrival (MD+1 / MD+2) & Rehab Sessions',
-      injuryRiskFocus: 'Minimal Mechanical & Metabolic Strain',
-      tacticalUse: 'Regeneration / Rondos / Tactical Flow',
-    },
-  },
-  {
-    name: 'Power',
-    category: 'Training Goal Index',
-    shortLabel: 'Force Application & Acceleration',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [5.5, 7.5],
-    cautionLow: 4.8,
-    cautionHigh: 8.2,
-    formulaDisplay: 'Power = 0.5 × Impact + 0.5 × Grip + 0.5',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Surface Hardness (Gm)', 'Rotational Resistance (Nm)', 'Horizontal Shear'],
-    quote:
-      'High force transfer during explosive acceleration and jumping requires a firm platform (Impact) paired with secure stud purchase (Grip).',
-    description:
-      'Driven equally by Impact and Grip. Evaluates how effectively an athlete can push against the ground during explosive starts, decelerations, and aerial duels without energy loss or foot slip.',
-    lowSpectrum: {
-      title: 'LOW FORCE PLATFORM (< 5.4)',
-      rangeLabel: '0.0 – 5.3',
-      mechanicalOrPhysiologicalLoad: 'Surface Gives Way Under High Shear',
-      surfaceFeel: 'Soft or Loose Turf',
-      recommendedUse: 'Controlled Sub-Maximal Work',
-      injuryRiskFocus: 'Groin / Adductor Strain from Slip',
-      tacticalUse: 'Compact Zonal Shape',
-    },
-    highSpectrum: {
-      title: 'HIGH FORCE PLATFORM (> 6.0)',
-      rangeLabel: '6.0 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Maximal Ground Reaction Force Transfer',
-      surfaceFeel: 'Firm & High-Traction',
-      recommendedUse: 'Explosive Acceleration, Duels & Power Blocks',
-      injuryRiskFocus: 'High Eccentric Braking Load on Knee/Ankle',
-      tacticalUse: '1v1 Duels & Explosive Box Entries',
-    },
-  },
-  {
-    name: 'Reaction',
-    category: 'Training Goal Index',
-    shortLabel: 'Agility, Set-Pieces & Reactivity',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [5.3, 7.2],
-    cautionLow: 4.8,
-    cautionHigh: 8.0,
-    formulaDisplay: 'Reaction = (Impact + Energy + Grip) / 3 + 0.5',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Impact (0–10)', 'Energy (0–10)', 'Grip (0–10)'],
-    quote:
-      'Reactive small-sided games, 1v1s, and MD-1 set-piece sessions demand balanced firmness, immediate elastic rebound, and reliable multi-directional traction.',
-    description:
-      'The holistic composite index combining Impact, Energy, and Grip in equal one-third weights (+ 0.5). Used heavily on MD-2 and MD-1 (e.g., Sept 24, 25, 28) to pick the sharpest, most responsive training pitch.',
-    lowSpectrum: {
-      title: 'SLUGGISH REACTIVITY (< 5.2)',
-      rangeLabel: '0.0 – 5.1',
-      mechanicalOrPhysiologicalLoad: 'Delayed Ground Response',
-      surfaceFeel: 'Slow / Compliant',
-      recommendedUse: 'Metabolic / Endurance Conditioning',
-      injuryRiskFocus: 'Slipping during rapid cuts',
-      tacticalUse: 'Large-Space Extensive Drills',
-    },
-    highSpectrum: {
-      title: 'CRISP REACTIVITY (> 5.5)',
-      rangeLabel: '5.5 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'Immediate Multi-Directional Response',
-      surfaceFeel: 'Fast, Crisp & Grippy',
-      recommendedUse: 'MD-1 Activation, Set Pieces, SSG & Agility',
-      injuryRiskFocus: 'Watch localized Grip > 8.0 hotspots',
-      tacticalUse: 'High-Tempo 1v1, Pressing Traps & Set Plays',
-    },
-  },
-  {
-    name: 'Metabolic',
-    category: 'Training Goal Index',
-    shortLabel: 'Metabolic Conditioning Demand',
-    unitOrScale: '0.0 – 10.0 Alignment Score',
-    optimalRange: [6.0, 7.5],
-    cautionLow: 5.0,
-    cautionHigh: 8.2,
-    formulaDisplay: 'Metabolic = 12.0 − Reaction = 11.5 − (Impact + Energy + Grip) / 3',
-    hardwareTester: 'Combined RAA + RTT Engine',
-    mechanicalProperties: ['Energy Dissipation', 'Soft Compaction', 'Lower Traction Shear'],
-    quote:
-      'Lower-impact, energy-absorbing surfaces increase internal metabolic work per meter covered while keeping peak mechanical joint forces low.',
-    description:
-      'Complementary to Reaction (Metabolic + Reaction = 12.0). Higher values signify that the pitch naturally increases internal physiological/metabolic workload during conditioning blocks (e.g., Sept 22–23 NTC sessions).',
-    lowSpectrum: {
-      title: 'LOW METABOLIC COST (< 5.8)',
-      rangeLabel: '0.0 – 5.7',
-      mechanicalOrPhysiologicalLoad: 'Low Internal Cost / High Mechanical Speed',
-      surfaceFeel: 'Fast & Firm',
-      recommendedUse: 'Speed & Match Day',
-      injuryRiskFocus: 'Mechanical Overload if Volume is High',
-      tacticalUse: 'Fast Transitions',
-    },
-    highSpectrum: {
-      title: 'HIGH METABOLIC STIMULUS (> 6.3)',
-      rangeLabel: '6.3 – 10.0',
-      mechanicalOrPhysiologicalLoad: 'High Internal Metabolic Load, Low Joint Shock',
-      surfaceFeel: 'Compliant & Demanding',
-      recommendedUse: 'MD-4 / MD-3 High-Intensity Metabolic Conditioning',
-      injuryRiskFocus: 'Muscular Fatigue / Calf & Quad Load',
-      tacticalUse: 'Intensive Conditioning & Repeated Sprint Work',
+      title: 'HIGH TRACTION FIELD',
+      loadLabel: 'REDUCED METABOLIC LOAD',
+      feelsLabel: 'INCREASED EXPLOSIVENESS',
+      secondaryAttributeLabel: 'MOVEMENT PROFILE',
+      secondaryAttributeValue: 'INCREASED EXPLOSIVENESS',
+      usedFor: 'REACTIVITY | SSG',
+      injuryRiskWatch: 'ANKLE | KNEE',
+      tacticalUse: '1V1 | DRIBBLING',
     },
   },
 ];
 
-export const INGESTED_EMAIL_REPORTS: EmailReport[] = [
+export interface IndexSpectrumUiSpec {
+  index: IndexName;
+  title: string;
+  mechanicalProperty: string;
+  whatIsIt: string;
+  leftSpectrum: {
+    title: string;
+    subtitle: string;
+    effectOnPlayer: string;
+    suggestedInjuryWatch: string;
+    tacticalUse: string;
+  };
+  rightSpectrum: {
+    title: string;
+    subtitle: string;
+    effectOnPlayer: string;
+    suggestedInjuryWatch: string;
+    tacticalUse: string;
+  };
+}
+
+export const RAW_STADIA_INDEX_SPECS: IndexSpectrumUiSpec[] = RAW_STADIA_KNOWLEDGE_SPECS.map(
+  (spec) => ({
+    index: spec.name,
+    title: `${spec.name.toUpperCase()} INDEX (0–10)`,
+    mechanicalProperty: spec.mechanicalProperties.join(' • '),
+    whatIsIt: `${spec.subtitle} ${spec.quote}`,
+    leftSpectrum: {
+      title: spec.lowSpectrum.title,
+      subtitle: spec.lowSpectrum.loadLabel,
+      effectOnPlayer: spec.lowSpectrum.feelsLabel,
+      suggestedInjuryWatch: spec.lowSpectrum.injuryRiskWatch,
+      tacticalUse: spec.lowSpectrum.tacticalUse,
+    },
+    rightSpectrum: {
+      title: spec.highSpectrum.title,
+      subtitle: spec.highSpectrum.loadLabel,
+      effectOnPlayer: spec.highSpectrum.feelsLabel,
+      suggestedInjuryWatch: spec.highSpectrum.injuryRiskWatch,
+      tacticalUse: spec.highSpectrum.tacticalUse,
+    },
+  })
+);
+
+export const APPENDIX_A_DEFINITIONS: { term: string; definition: string }[] = [
   {
-    id: 'email-2026-09-21',
-    slug: '2026-09-21_NTC_Training_Recovery',
-    date: '2026-09-21',
-    sentAt: '2026-09-21T11:32:39Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Training Session Report (Sept 21)',
-    sessionObjective: 'Recovery',
-    reportCategory: 'NTC Daily Training',
-    attachmentName: 'FIELD_STATUS_20260921_Recovery.pdf',
-    pitchesTested: ['USSF Super 3', 'USSF Super 4', 'USSF Super 5'],
-    recommendedPitch: 'All 3 Fields Appropriate (Super 3 & 4 Ideal for Recovery)',
-    keyTakeaways: [
-      'Impact values ranged from 4.2 to 4.9 across NTC Super 3, 4, and 5, placing all three surfaces in the lower-impact range ideal for limiting peak joint loading on arrival.',
-      'Energy values were highly uniform (3.9 to 4.1), indicating minimal difference in elastic surface response.',
-      'Largest difference observed in Grip: Super 3 recorded 5.6 vs. 6.4 on Field 4. Kept within staff as context without mandating player boot changes on Day 1.',
-    ],
-    metricsSummary: [
-      { pitch: 'USSF Super 3', impact: '4.2', energy: '3.9', grip: '5.6', bootNote: 'FG-L (4.5)' },
-      { pitch: 'USSF Super 4', impact: '4.4', energy: '3.9', grip: '6.4', bootNote: 'Mixed (3.7)' },
-      { pitch: 'USSF Super 5', impact: '4.9', energy: '4.1', grip: '6.1', bootNote: 'Mixed (3.8)' },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>Surface testing conducted this morning indicates that all three fields are appropriate for the objectives of today’s training session.</p><p><strong>Impact</strong> values ranged from <strong>4.2 to 4.9</strong>, placing all three surfaces within the lower-impact range. This profile is well aligned with today’s session objectives, providing conditions that help limit peak loading while maintaining an appropriate surface for controlled training activities.</p><p><strong>Energy</strong> values were very consistent across the three fields, ranging from <strong>3.9 to 4.1</strong>, indicating minimal differences in surface energy response between the available training areas.</p><p>The largest difference was observed in <strong>Grip</strong>. Super 3 field recorded a Grip value of <strong>5.6</strong>, compared with <strong>6.4</strong> on Field 4. This difference may influence how players experience traction and could potentially inform footwear/stud selection. At this stage, however, we are not recommending any specific footwear changes to players and plan to keep this information within the staff as additional context for decision-making.</p><p>Based on the overall surface profile, all three fields are in great condition for today’s session.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
+    term: 'Impact Index (0–10) • Soft Field ↔ Hard Field',
+    definition:
+      'Measured via the Raw Artificial Athlete (RAA) across 18 pitch zones, combining Hardness, Shock Absorption, and Surface Deformation. Lower values indicate a Soft Field (watch: Muscles | Ligaments); higher values indicate a Hard Field (watch: Tendons | Joints).',
   },
   {
-    id: 'email-2026-09-22',
-    slug: '2026-09-22_NTC_Training_Metabolic',
-    date: '2026-09-22',
-    sentAt: '2026-09-22T12:08:14Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Training Session Report (Sept 22)',
-    sessionObjective: 'Metabolic',
-    reportCategory: 'NTC Daily Training',
-    attachmentName: 'FIELD_STATUS_20260922_Metabolic.pdf',
-    pitchesTested: ['USSF Super 3', 'USSF Super 4', 'USSF Super 5'],
-    recommendedPitch: 'USSF Super 4 (Most Suitable Overall for 2 Groups)',
-    keyTakeaways: [
-      'Impact values remained in the lower-to-moderate range (4.2 to 5.0), with Energy slightly lower on Field 3 (3.8).',
-      'Field 4 (Super 4) identified as the most suitable overall surface for today’s Metabolic session, especially with the squad split into two training groups.',
-      'Two localized high-Grip zones on Fields 4 (Zone 5: 8.57) and 5 (Zone 12: 8.14) were flagged and communicated to the Grounds team for targeted remediation.',
-    ],
-    metricsSummary: [
-      { pitch: 'USSF Super 3', impact: '4.3', energy: '3.8', grip: '5.6', bootNote: 'FG-L (4.5)' },
-      { pitch: 'USSF Super 4', impact: '4.2', energy: '3.9', grip: '6.4', bootNote: 'Mixed (3.7) • 1 Hotspot' },
-      { pitch: 'USSF Super 5', impact: '5.0', energy: '4.0', grip: '6.1', bootNote: 'Mixed (3.8) • 1 Hotspot' },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>Today’s surface testing shows very similar conditions to yesterday across all three fields.</p><p><strong>Impact</strong> values ranged between <strong>4.2 and 5.0</strong>, while <strong>Energy</strong> was slightly lower on Field 3 (<strong>3.8</strong>) compared to Fields 4 and 5. Overall, <strong>Field 4 appears to be the most suitable option for today’s session</strong>, particularly considering the plan to work in two groups.</p><p>We also identified two localized areas with elevated <strong>Grip</strong> values on Fields 4 and 5. These spots will be communicated to the Grounds team so they can be addressed.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
+    term: 'Energy Index (0–10) • Dissipating Field ↔ Rebounding Field',
+    definition:
+      'Measured via the Raw Artificial Athlete (RAA), capturing Energy Restitution and Spring Rate. Lower values indicate a Dissipating Field (watch: Calves | Cramps); higher values indicate a Rebounding Field (watch: Overload).',
   },
   {
-    id: 'email-2026-09-23',
-    slug: '2026-09-23_NTC_Daily_Metabolic',
-    date: '2026-09-23',
-    sentAt: '2026-09-23T11:55:42Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Daily Report (Sept 23)',
-    sessionObjective: 'Metabolic',
-    reportCategory: 'NTC Daily Training',
-    attachmentName: 'FIELD_STATUS_20260923_Metabolic.pdf',
-    pitchesTested: ['USSF Super 3', 'USSF Super 4', 'USSF Super 5'],
-    recommendedPitch: 'USSF Super 4 & Super 5 (Avoid Left Half of Super 3)',
-    keyTakeaways: [
-      'Fields 4 and 5 recommended for today’s Metabolic session involving longer runs and large spaces.',
-      'Field 3 (Super 3) dropped to a very low Impact average of 3.09—specifically on the left half adjacent to the gym (Zones 1–9 dropped to 2.00)—making that half overly soft and less responsive.',
-      'Super 5 showed the highest Energy (4.39) and Impact (4.72), offering a faster alternative for high-volume running.',
-    ],
-    metricsSummary: [
-      { pitch: 'USSF Super 3', impact: '3.1 (Left half 2.0)', energy: '3.8', grip: '5.6', bootNote: 'Soft Left Half Alert' },
-      { pitch: 'USSF Super 4', impact: '3.9', energy: '4.1', grip: '6.4', bootNote: 'Recommended (Metabolic 6.7)' },
-      { pitch: 'USSF Super 5', impact: '4.7', energy: '4.4', grip: '6.1', bootNote: 'Recommended (Fastest)' },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>For today’s metabolic session (longer runs and large spaces), <strong>Fields 4 and 5 are the recommended options</strong>.</p><p><strong>Field 3</strong> recorded very low <strong>Impact</strong> values on the left half of the pitch (the side closest to the gym), which makes that area significantly softer and less responsive for running.</p><p>Fields 4 and 5 provide a much more consistent profile across all zones for large-space work.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
+    term: 'Grip Index (0–10) • Low Traction Field ↔ High Traction Field',
+    definition:
+      'Measured via the Rotational Traction Tester (RTT), capturing Stud Depth, Rotational Traction, Initial Grip, and Rotational Stiffness. Lower values indicate a Low Traction Field (watch: Groin | Slipping); higher values indicate a High Traction Field (watch: Ankle | Knee).',
   },
   {
-    id: 'email-2026-09-24',
-    slug: '2026-09-24_NTC_Daily_Reaction',
-    date: '2026-09-24',
-    sentAt: '2026-09-24T11:20:10Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Daily Report (Sept 24)',
-    sessionObjective: 'Reaction',
-    reportCategory: 'NTC Daily Training',
-    attachmentName: 'FIELD_STATUS_20260924_Reaction.pdf',
-    pitchesTested: ['USSF Super 3', 'USSF Super 4', 'USSF Super 5'],
-    recommendedPitch: 'USSF Super 5 (Preferred for Reaction & Set-Piece Session)',
-    keyTakeaways: [
-      'Session objective shifted to Reaction ahead of travel to Orlando.',
-      'Field 5 preferred for the Reaction objective during the set-piece session (Impact 4.2, Energy 4.1, Grip 6.1 -> highest Reaction alignment).',
-      'Field 3 recovered slightly from yesterday (Impact 3.6 vs 3.1) but remained softer than Fields 4 (3.9) and 5 (4.2).',
-    ],
-    metricsSummary: [
-      { pitch: 'USSF Super 3', impact: '3.6', energy: '4.0', grip: '5.6', bootNote: 'Softer Profile' },
-      { pitch: 'USSF Super 4', impact: '3.9', energy: '4.0', grip: '6.4', bootNote: 'High Grip (6.4)' },
-      { pitch: 'USSF Super 5', impact: '4.2', energy: '4.1', grip: '6.1', bootNote: 'Preferred for Reaction' },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>Here are today’s surface readings at NTC:</p><ul><li><strong>Field 3:</strong> Impact 3.6 | Energy 4.0 | Grip 5.6</li><li><strong>Field 4:</strong> Impact 3.9 | Energy 4.0 | Grip 6.4</li><li><strong>Field 5:</strong> Impact 4.2 | Energy 4.1 | Grip 6.1</li></ul><p>For today’s <strong>Reaction</strong> objective and set-piece session, <strong>Field 5 is the preferred option</strong>, offering the best combination of surface firmness, energy return, and balanced traction.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-09-25',
-    slug: '2026-09-25_Orlando_Training_Reaction',
-    date: '2026-09-25',
-    sentAt: '2026-09-25T15:12:05Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Daily Report (Orlando MD-1)',
-    sessionObjective: 'Reaction',
-    reportCategory: 'Orlando MD-1 / MD',
-    attachmentName: 'FIELD_STATUS_20260925_Reaction.pdf',
-    pitchesTested: ['Orlando - Inter.co Stadium'],
-    recommendedPitch: 'Inter&Co Stadium (MD-1 Familiarization)',
-    keyTakeaways: [
-      'MD-1 evaluation at Inter&Co Stadium in Orlando recorded an average Impact of 3.75 (with 3 localized soft zones at 2.0 on the flanks).',
-      'Energy averaged 4.12 (very similar to NTC Field 5).',
-      'Grip averaged 6.21 across the 18 zones, with one isolated central hotspot of 8.1 in Zone 8 (center circle left midfield). Boot index averaged 4.73 (Firm Ground Long).',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'Orlando - Inter&Co Stadium (MD-1)',
-        impact: '3.75 (min 2.0)',
-        energy: '4.12',
-        grip: '6.21 (max 8.1)',
-        bootNote: 'FG-L (4.73)',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>Attached is today’s surface report for MD-1 training in Orlando (<strong>Inter&amp;Co Stadium</strong>).</p><p>Overall readings: <strong>Impact 3.7</strong> (with a few localized softer spots around 2.0 on the perimeter), <strong>Energy 4.1</strong>, and <strong>Grip 6.2</strong> (consistent across the pitch except for one isolated central reading of 8.1).</p><p>The surface profile is closely aligned with what players experienced on Field 4/5 at the NTC.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-09-26',
-    slug: '2026-09-26_Orlando_MatchDay_Speed',
-    date: '2026-09-26',
-    sentAt: '2026-09-26T14:40:22Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Match Day – Orlando Stadium Field Status Report',
-    sessionObjective: 'Speed',
-    reportCategory: 'Match Day Stadium',
-    attachmentName: 'STADIUM_FIELD_STATUS_Orlando_-_Inter_co_Stadium_20260926_Speed.pdf',
-    pitchesTested: ['Orlando - Inter&Co Stadium (MD)'],
-    recommendedPitch: 'Inter&Co Stadium (Match Day Speed Profile)',
-    keyTakeaways: [
-      'Following game-day mowing and rolling, Inter&Co Stadium Impact increased from 3.75 (MD-1) to 4.8 (MD), eliminating the 2.0 soft spots and creating a faster match surface.',
-      'Energy locked in at a uniform 4.3 across all 18 zones.',
-      'Grip held at 6.2 average (range 4.9–8.1), with Zone 8 in the center circle still registering 8.1.',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'Orlando - Inter&Co Stadium (MD)',
-        impact: '4.8 (range 4.0–5.6)',
-        energy: '4.3 (uniform)',
-        grip: '6.2 (Zone 8: 8.1)',
-        bootNote: 'Mixed / FG-L',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Hi all,</p><p>Attached is the updated <strong>Match Day Stadium Field Status Report</strong> for Inter&amp;Co Stadium in Orlando (corrected filename for 2026-09-26).</p><p>Compared to yesterday, game-day preparation increased <strong>Impact to 4.8</strong> (up from 3.7) and <strong>Energy to 4.3</strong> across all zones, creating a faster surface for today’s match while maintaining a <strong>6.2 Grip</strong> profile.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-09-26-jordan',
-    slug: '2026-09-26_Jordan_Webb_Feedback_Mockups',
-    date: '2026-09-26',
-    sentAt: '2026-09-26T16:05:11Z',
-    from: 'Jordan Webb (Integrated Performance Support)',
-    subject: 'RE: Match Day – Orlando Stadium Field Status Report (Dashboard & REF Line Concept)',
-    sessionObjective: 'Methodology',
-    reportCategory: 'Staff Design Feedback',
-    attachmentName: 'Mockup_REF_Gauges_and_Appendix_A.png',
-    pitchesTested: ['Orlando - Inter&Co Stadium (MD)', 'NTC Reference Baseline'],
-    recommendedPitch: 'Design Enhancement: Add NTC REF Line + Appendix A Definitions',
-    keyTakeaways: [
-      'Requested two key additions to make Raw Stadia reports immediately actionable for coaches and performance staff:',
-      'Addition 1 (REF Benchmark Line): Place a vertical purple REF marker on the 0–10 Impact, Energy, and Grip gauges anchored to familiar training pitches (e.g., NTC baseline) so staff can immediately see if a stadium is harder, faster, or grippier than normal.',
-      'Addition 2 (Appendix A Definitions): Include clear, concise definitions of Impact, Energy, Grip, Energy Restitution (%), Hardness (Gm), and Stud Depth (mm).',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'Visual Mockup (Orlando MD vs NTC REF)',
-        impact: '4.8 vs NTC REF',
-        energy: '4.3 vs NTC REF',
-        grip: '6.2 vs NTC REF',
-        bootNote: '18-Zone Circle Map + Appendix A',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Thanks Jose — this is great context.</p><p>Looking ahead, two additions that would help us evaluate and compare stadiums even faster:</p><ol><li><strong>Reference (REF) Marker on the 0–10 Gauges:</strong> Adding a <code>REF</code> line anchored to a familiar reference pitch (like the NTC average) on the Impact, Energy, and Grip bars alongside the 18-zone pitch map so we can immediately see how a match stadium compares to our home training surfaces.</li><li><strong>Appendix A – Surface Characteristic Definitions:</strong> A clean reference guide defining <em>Impact, Energy, Grip, Energy Restitution (%), Hardness (Gm), and Stud Depth (mm)</em>.</li></ol><p>Best,<br/><strong>Jordan Webb</strong></p></div>`,
-  },
-  {
-    id: 'email-2026-09-28',
-    slug: '2026-09-28_NTC_Daily_Reaction',
-    date: '2026-09-28',
-    sentAt: '2026-09-28T11:42:19Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Surface Intelligence – Daily Report (Sept 28)',
-    sessionObjective: 'Reaction',
-    reportCategory: 'NTC Daily Training',
-    attachmentName: 'FIELD_STATUS_20260928_Reaction.pdf',
-    pitchesTested: ['USSF Super 3', 'USSF Super 4', 'USSF Super 5'],
-    recommendedPitch: 'USSF Super 4 & Super 5 (Recommended for Reaction)',
-    keyTakeaways: [
-      'Back at NTC following Orlando match: all three pitches firmed up nicely into the 4.5–5.1 Impact band.',
-      'Field 3 (Impact 4.5 | Energy 4.0 | Grip 5.6), Field 4 (Impact 4.6 | Energy 4.1 | Grip 6.4), Field 5 (Impact 5.1 | Energy 4.1 | Grip 6.1).',
-      'Fields 4 and 5 recommended for today’s Reaction session prior to St. Louis travel.',
-    ],
-    metricsSummary: [
-      { pitch: 'USSF Super 3', impact: '4.5', energy: '4.0', grip: '5.6', bootNote: 'FG-L (4.5)' },
-      { pitch: 'USSF Super 4', impact: '4.6', energy: '4.1', grip: '6.4', bootNote: 'Recommended' },
-      { pitch: 'USSF Super 5', impact: '5.1', energy: '4.1', grip: '6.1', bootNote: 'Recommended (Firmest)' },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Good morning,</p><p>Today’s NTC surface readings:</p><ul><li><strong>Field 3:</strong> Impact 4.6 | Energy 4.0 | Grip 5.6</li><li><strong>Field 4:</strong> Impact 4.6 | Energy 4.1 | Grip 6.4</li><li><strong>Field 5:</strong> Impact 5.0 | Energy 4.1 | Grip 6.1</li></ul><p><strong>Fields 4 and 5 are recommended</strong> for today’s Reaction objective.</p><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-09-29',
-    slug: '2026-09-29_StLouis_EnergizerPark_MatchDay_Speed',
-    date: '2026-09-29',
-    sentAt: '2026-09-29T15:18:44Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Match Day – St Louis Stadium Field Status Report (Energizer Park)',
-    sessionObjective: 'Speed',
-    reportCategory: 'Match Day Stadium',
-    attachmentName: 'STADIUM_FIELD_STATUS_St_Louis_-_Energizer_Park_20260929_Speed.pdf',
-    pitchesTested: ['St. Louis - Energizer Park (MD)'],
-    recommendedPitch: 'Energizer Park (High Impact & Hardness Alert)',
-    keyTakeaways: [
-      'Energizer Park recorded the highest Impact (~6.7 avg) and Hardness (~98.5 Gm) values measured during camp to date—substantially firmer than NTC (~4.3) and Orlando (4.8).',
-      'Stadium grounds team prohibited on-pitch RTT traction testing on Match Day, but provided 6-zone Rotational Resistance data showing one central zone at an unacceptable 73.1 Nm peak torque.',
-      'Note pitch orientation: team benches are located on the South side (bottom touchline).',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'St. Louis - Energizer Park (MD)',
-        impact: '6.7 (High Hardness)',
-        energy: '4.4',
-        grip: '6.4 (1 Zone @ 73.1 Nm)',
-        bootNote: 'Avoid Long Blades in High-Torque Zone',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Hi all,</p><p>Attached is the <strong>Match Day Field Status Report for Energizer Park in St. Louis</strong>.</p><p>Key takeaways:</p><ul><li><strong>Highest Impact &amp; Hardness of Camp:</strong> The pitch recorded the highest Impact and Hardness values we have seen so far this camp, meaning a fast surface with elevated mechanical peak loading.</li><li><strong>Traction &amp; Rotational Resistance:</strong> The local grounds crew did not permit RTT testing on the pitch today, but shared their 6-zone Rotational Resistance measurements—five zones are in range, while one zone recorded an unacceptable <strong>73.1 Nm</strong> reading.</li><li><strong>Orientation Note:</strong> Team benches are situated on the South side of the stadium.</li></ul><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-10-03',
-    slug: '2026-10-03_Arizona_StateFarm_MatchDay_Speed',
-    date: '2026-10-03',
-    sentAt: '2026-10-03T16:04:12Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Match Day – Arizona Stadium Field Status Report (State Farm Stadium)',
-    sessionObjective: 'Speed',
-    reportCategory: 'Match Day Stadium',
-    attachmentName: 'STADIUM_FIELD_STATUS_Arizona_-_State_Farm_Stadium_20261003_Speed.pdf',
-    pitchesTested: ['Arizona - State Farm Stadium (MD)'],
-    recommendedPitch: 'State Farm Stadium (Sharper / Conical FG Studs Recommended)',
-    keyTakeaways: [
-      'Newly installed sod on the retractable field tray (first match played on this surface).',
-      'High localized Hardness (up to 104 Gm) and Impact ranging from 5.1 to 7.7 (avg 6.34), particularly firm through the central spine.',
-      'Traction tested at 10+ perimeter locations revealed shallow Stud Depth (mean 8.6 mm, range 7–10 mm) due to the dense new sod rootzone -> sharper/more conical studs recommended to aid penetration and prevent slipping.',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'Arizona - State Farm Stadium (MD)',
-        impact: '6.3 (range 5.1–7.7)',
-        energy: '4.2',
-        grip: '5.8 (Stud Depth 8.6mm)',
-        bootNote: 'Sharper / Conical FG Studs (5.6)',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Hi all,</p><p>Attached is the <strong>Match Day Field Status Report for State Farm Stadium in Arizona</strong>.</p><ul><li><strong>New Sod Profile:</strong> This is newly installed sod (first match played on it). We observed high localized <strong>Hardness (up to 104 Gm)</strong> and <strong>Impact values ranging from 5.1 to 7.7</strong>.</li><li><strong>Traction &amp; Footwear Recommendation:</strong> Traction was tested across 10+ perimeter locations. Because <strong>Stud Depth is shallow (mean 8.6 mm, range 7–10 mm)</strong>, players may experience reduced stud penetration. <strong>Sharper / more conical studs are recommended</strong> to help penetrate the upper layer and prevent slipping.</li></ul><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
-  },
-  {
-    id: 'email-2026-10-06',
-    slug: '2026-10-06_Minnesota_AllianzField_MatchDay_Speed',
-    date: '2026-10-06',
-    sentAt: '2026-10-06T15:29:50Z',
-    from: 'José María Oliva Lozano (Director, Performance Innovation)',
-    subject: 'Match Day – Minnesota Stadium Field Status Report (Allianz Field)',
-    sessionObjective: 'Speed',
-    reportCategory: 'Match Day Stadium',
-    attachmentName: 'STADIUM_FIELD_STATUS_Minnesota_-_Allianz_Field_20261006_Speed.pdf',
-    pitchesTested: ['Minnesota - Allianz Field (MD)'],
-    recommendedPitch: 'Allianz Field (Firm Ground Long Cleats Recommended)',
-    keyTakeaways: [
-      'High Impact across the pitch (avg 6.69, up to 7.7) with highest Hardness concentrated on the right half (103–107 Gm).',
-      'Strong Energy Restitution (avg 18.3%, Energy index 4.55), promoting a fast, responsive rebounding match surface.',
-      'On-field RTT traction tested across 13 zones showed well-balanced Grip (6.32) & Rotational Resistance (49.4 Nm) with improved Stud Depth (10.8 mm) compared to Arizona -> Firm Ground Long (FG-L) cleats recommended.',
-    ],
-    metricsSummary: [
-      {
-        pitch: 'Minnesota - Allianz Field (MD)',
-        impact: '6.7 (max 7.7 right side)',
-        energy: '4.6 (18.3% Restitution)',
-        grip: '6.3 (13-Zone On-Field)',
-        bootNote: 'Firm Ground Long (FG-L • 4.4)',
-      },
-    ],
-    rawHtml: `<div style="font-family:Inter,Calibri,sans-serif;line-height:1.6"><p>Hi all,</p><p>Attached is the <strong>Match Day Field Status Report for Allianz Field in Minnesota</strong>.</p><ul><li><strong>Impact &amp; Hardness:</strong> High Impact values (up to <strong>7.7</strong>) with the highest Hardness readings on the right side of the pitch (<strong>103–107 Gm</strong>).</li><li><strong>Energy Response:</strong> Good Energy Restitution across the surface (averaging <strong>18.3%</strong>), supporting a fast-paced game.</li><li><strong>Traction &amp; Boot Selection:</strong> Traction was tested directly on the field across 13 zones, showing balanced Grip and Rotational Resistance with improved Stud Depth compared to Arizona. <strong>Firm Ground Long (FG-L)</strong> cleats are recommended.</li></ul><p>Best,<br/><strong>José María Oliva Lozano</strong><br/>Director, Performance Innovation</p></div>`,
+    term: 'Empirical Reference Range (Mean ± 1 SD)',
+    definition:
+      'Instead of arbitrary cutoffs, the Purple REF Line represents the empirical Mean and the Shaded Green Reference Band represents Mean ± 1 SD across the selected reference baseline (e.g., NTC Training Baseline across USSF Super 3, 4, and 5).',
   },
 ];
 
-export const APPENDIX_A_DEFINITIONS = [
-  {
-    term: 'Impact (0–10 Index)',
-    instrument: 'Raw Artificial Athlete (RAA)',
-    optimalBand: '4.0 – 6.0',
-    definition:
-      "Measures the compaction of surface layers and attenuation of impact forces when a player's foot strikes the pitch (combining Hardness, Shock Absorption, and Vertical Deformation). Lower values (<3.8) indicate a compliant/soft surface ideal for recovery; higher values (>6.2) indicate a hard surface that promotes top speed but increases tendon and joint stress.",
-  },
-  {
-    term: 'Energy (0–10 Index)',
-    instrument: 'Raw Artificial Athlete (RAA)',
-    optimalBand: '3.8 – 5.5',
-    definition:
-      'Represents the elastic properties of the surface (Energy Restitution % and Spring Rate). Dissipating surfaces (<3.6) absorb more energy and feel heavier/more fatiguing (increasing physiological load), whereas rebounding surfaces (>4.4) return mechanical energy to facilitate speed and high-volume running.',
-  },
-  {
-    term: 'Grip (0–10 Index)',
-    instrument: 'Rotational Traction Tester (RTT)',
-    optimalBand: '5.5 – 7.2',
-    definition:
-      'Assesses stud penetration ease and available rotational/linear traction (Stud Depth, Rotational Resistance, Initial Grip, and Rotational Stiffness). Values <5.0 increase slipping and groin strain risk; values >8.0 indicate excessive rotational torque that elevates knee and ankle fixation risk.',
-  },
-  {
-    term: 'Hardness (Gm)',
-    instrument: 'Clegg Impact Hammer / RAA',
-    optimalBand: '65 – 85 Gm',
-    definition:
-      'The peak deceleration (in gravities, Gm) measured by dropping a standardized missile onto the turf. Provides a direct physical indication of surface firmness and upper-rootzone compaction (>95 Gm indicates a very hard stadium pitch).',
-  },
-  {
-    term: 'Shock Absorption / Force Reduction (%)',
-    instrument: 'Raw Artificial Athlete (RAA)',
-    optimalBand: '58% – 68%',
-    definition:
-      'Percentage of peak impact force reduced by the turf relative to a rigid concrete reference floor. Higher percentages indicate a softer, more compliant surface.',
-  },
-  {
-    term: 'Energy Restitution (%)',
-    instrument: 'Raw Artificial Athlete (RAA)',
-    optimalBand: '16% – 21%',
-    definition:
-      'The percentage of mechanical impact energy returned to the athlete from the surface after foot strike. Higher values (e.g., 18.3% at Allianz Field) indicate a springy, responsive pitch.',
-  },
-  {
-    term: 'Rotational Resistance / Peak Torque (Nm)',
-    instrument: 'Rotational Traction Tester (RTT)',
-    optimalBand: '35 – 52 Nm',
-    definition:
-      'Peak rotational torque (Newton-meters) required to rotate a loaded studded test footplate through the turf. Readings above 65–70 Nm (such as the 73.1 Nm zone flagged in St. Louis) pose an unacceptable lower-limb rotational lock hazard.',
-  },
-  {
-    term: 'Stud Depth (mm)',
-    instrument: 'Rotational Traction Tester (RTT)',
-    optimalBand: '9.5 – 13.5 mm',
-    definition:
-      'The depth of boot stud penetration into the turf canopy and rootzone under vertical load. Directly governs the Match Day Boot Recommendation (e.g., 8.6 mm shallow penetration in Arizona required sharper conical FG studs).',
-  },
-];
+export const CORE_METRICS: IndexName[] = ['Impact', 'Energy', 'Grip'];
+
+export function getKnowledgeSpec(metric: IndexName): IndexKnowledgeSpec {
+  return (
+    RAW_STADIA_KNOWLEDGE_SPECS.find((s) => s.name === metric) ||
+    RAW_STADIA_KNOWLEDGE_SPECS[0]
+  );
+}

@@ -1,104 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { BookOpen, Info, Scale, Search, ShieldCheck, X } from 'lucide-react';
-import { APPENDIX_A_DEFINITIONS, RAW_STADIA_KNOWLEDGE_SPECS } from '../data/rawStadiaKnowledge';
-
-export interface AppendixAEntry {
-  key: string;
-  term: string;
-  category: 'Core Index (0–10)' | 'RAA Vertical Hardware' | 'RTT Rotational Hardware';
-  optimalBand: string;
-  instrument: string;
-  definition: string;
-  clinicalTakeaway: string;
-}
-
-export const ENRICHED_APPENDIX_A: AppendixAEntry[] = [
-  {
-    key: 'Impact',
-    term: 'Impact Index (0–10 Scale)',
-    category: 'Core Index (0–10)',
-    optimalBand: '4.0 – 6.0 / 10',
-    instrument: 'Raw Artificial Athlete (RAA) Composite',
-    definition:
-      'Quantifies overall surface firmness, compaction, and vertical force attenuation during foot strike. Lower scores (< 3.5) indicate a soft, compliant, energy-absorbing pitch; higher scores (> 6.5) indicate a firm, compact, high-deceleration surface.',
-    clinicalTakeaway:
-      'Suggested consideration: Higher Impact (> 6.5) may increase peak braking impulse and tendon loading; lower Impact (< 3.5) can increase muscular work and ground contact time.',
-  },
-  {
-    key: 'Energy',
-    term: 'Energy Index (0–10 Scale)',
-    category: 'Core Index (0–10)',
-    optimalBand: '3.8 – 5.5 / 10',
-    instrument: 'Raw Artificial Athlete (RAA) Rebound',
-    definition:
-      'Measures elastic energy return (springiness vs. damping) when an athlete pushes off the turf. Low scores (< 3.5) mean the surface dissipates mechanical work; high scores (> 5.5) mean the surface returns elastic energy rapidly.',
-    clinicalTakeaway:
-      'Suggested consideration: Higher Energy relative to Impact can support running economy and MD+1 regeneration; lower Energy may contribute to higher internal metabolic cost.',
-  },
-  {
-    key: 'Grip',
-    term: 'Grip Index (0–10 Scale)',
-    category: 'Core Index (0–10)',
-    optimalBand: '5.5 – 7.2 / 10',
-    instrument: 'Rotational Traction Tester (RTT) Composite',
-    definition:
-      'Quantifies rotational and linear shear traction between cleat studs and the rootzone during planting, cutting, and deceleration.',
-    clinicalTakeaway:
-      'Suggested consideration: Values ≥ 8.0 indicate stronger rotational cleat fixation (consider conical FG-S studs); values < 5.0 suggest reduced shear traction where longer studs may help.',
-  },
-  ...APPENDIX_A_DEFINITIONS.map((d) => {
-    let key = d.term;
-    let cat: AppendixAEntry['category'] = 'RAA Vertical Hardware';
-    let takeaway =
-      'Used alongside the 0–10 indices to help contextualize rootzone moisture, compaction, and suggested cleat options.';
-
-    if (d.term.includes('Hardness')) {
-      key = 'Hardness';
-      cat = 'RAA Vertical Hardware';
-      takeaway =
-        'Suggested context: Values > 85 Gm indicate firmer, more compact turf; values < 60 Gm indicate softer, wetter, or newly aerated rootzones.';
-    } else if (d.term.includes('Shock Absorption')) {
-      key = 'ShockAbsorption';
-      cat = 'RAA Vertical Hardware';
-      takeaway =
-        'Suggested context: Higher % means greater vertical force attenuation relative to concrete; below 55% indicates a firmer underfoot profile.';
-    } else if (d.term.includes('Energy Restitution')) {
-      key = 'EnergyRestitution';
-      cat = 'RAA Vertical Hardware';
-      takeaway =
-        'Suggested context: Measures vertical rebound efficiency; higher % produces a faster, springier pitch feel.';
-    } else if (d.term.includes('Rotational Resistance')) {
-      key = 'RotationalTorque';
-      cat = 'RTT Rotational Hardware';
-      takeaway =
-        'Suggested context: Peak torque > 52 Nm indicates high rotational fixation; < 30 Nm indicates lower shear resistance during cutting.';
-    } else if (d.term.includes('Stud Penetration')) {
-      key = 'StudDepth';
-      cat = 'RTT Rotational Hardware';
-      takeaway =
-        'Suggested cleat context: < 9.0 mm often favors shorter FG-S studs; > 12.0 mm can accommodate Mixed/SG studs depending on player preference.';
-    } else if (d.term.includes('Boot')) {
-      key = 'Boot';
-      cat = 'RTT Rotational Hardware';
-      takeaway =
-        'Suggested soleplate guide: < 2.2 = SG Metal | 2.2–4.0 = Mixed SG/FG | 4.0–5.3 = FG-L | 5.3–7.2 = FG-S Conical | > 7.2 = AG.';
-    }
-
-    return {
-      key,
-      term: d.term,
-      category: cat,
-      optimalBand: d.optimalBand,
-      instrument: d.instrument,
-      definition: d.definition,
-      clinicalTakeaway: takeaway,
-    };
-  }),
-];
+import React, { useEffect } from 'react';
+import { BookOpen, Info, Scale, ShieldCheck, X } from 'lucide-react';
+import { getKnowledgeSpec, RAW_STADIA_KNOWLEDGE_SPECS } from '../data/rawStadiaKnowledge';
+import { IndexName, ReferenceBaselineProfile } from '../types/rawStadia';
 
 interface MetricInfoTriggerProps {
-  metricKey: string;
-  onOpenModal: (metricKey: string) => void;
+  metricKey: IndexName;
+  onOpenModal: (metricKey: IndexName) => void;
   label?: string;
 }
 
@@ -107,12 +14,7 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
   onOpenModal,
   label,
 }) => {
-  const entry =
-    ENRICHED_APPENDIX_A.find(
-      (e) =>
-        e.key.toLowerCase() === metricKey.toLowerCase() ||
-        e.term.toLowerCase().includes(metricKey.toLowerCase())
-    ) || ENRICHED_APPENDIX_A[0];
+  const spec = getKnowledgeSpec(metricKey);
 
   return (
     <span className="relative inline-flex items-center group">
@@ -120,10 +22,10 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onOpenModal(entry.key);
+          onOpenModal(metricKey);
         }}
         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-[#CBD5E1] hover:border-[#001489] text-[#64748B] hover:text-[#001489] text-[10px] font-extrabold transition-colors cursor-pointer"
-        title={`View Appendix A definition for ${entry.term}`}
+        title={`View Reference Guide for ${spec.name}`}
       >
         <Info className="w-3 h-3 text-[#C69214]" />
         {label && <span>{label}</span>}
@@ -132,17 +34,17 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
       {/* Instant Hover Popover Preview */}
       <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 z-50 bg-white border border-[#CBD5E1] rounded-[10px] p-3 shadow-xl text-left">
         <div className="flex items-center justify-between gap-2 mb-1">
-          <span className="text-[11px] font-black text-[#2E3440]">{entry.term}</span>
+          <span className="text-xs font-black uppercase text-[#001489]">{spec.name}</span>
           <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
-            Opt: {entry.optimalBand}
+            {spec.lowSpectrum.title} ↔ {spec.highSpectrum.title}
           </span>
         </div>
         <div className="text-[9px] font-mono font-bold uppercase text-[#C69214] mb-1">
-          {entry.instrument}
+          {spec.hardwareTester} • {spec.mechanicalProperties.join(', ')}
         </div>
-        <p className="text-[11px] text-[#434C5E] font-normal leading-snug">{entry.definition}</p>
+        <p className="text-[11px] text-[#434C5E] font-normal leading-snug">{spec.subtitle}</p>
         <div className="mt-1.5 pt-1.5 border-t border-[#E2E8F0] text-[10px] font-bold text-[#001489]">
-          Click icon to open full Appendix A Popup →
+          Click to open full Impact / Energy / Grip Reference Popup →
         </div>
       </div>
     </span>
@@ -152,17 +54,16 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
 interface AppendixAModalProps {
   isOpen: boolean;
   onClose: () => void;
-  highlightedKey?: string | null;
+  highlightedKey?: IndexName | string | null;
+  referenceProfile?: ReferenceBaselineProfile;
 }
 
 export const AppendixAModal: React.FC<AppendixAModalProps> = ({
   isOpen,
   onClose,
   highlightedKey,
+  referenceProfile,
 }) => {
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -174,18 +75,6 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredEntries = ENRICHED_APPENDIX_A.filter((item) => {
-    if (categoryFilter !== 'ALL' && item.category !== categoryFilter) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      item.term.toLowerCase().includes(q) ||
-      item.definition.toLowerCase().includes(q) ||
-      item.instrument.toLowerCase().includes(q) ||
-      item.clinicalTakeaway.toLowerCase().includes(q)
-    );
-  });
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
@@ -196,11 +85,11 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white border border-[#CBD5E1] rounded-[14px] w-full max-w-4xl max-h-[86vh] flex flex-col overflow-hidden"
+        className="bg-white border border-[#CBD5E1] rounded-[14px] w-full max-w-5xl max-h-[88vh] flex flex-col overflow-hidden"
         style={{ boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header (mnt-data-management StagingModal style) */}
+        {/* Modal Header */}
         <div className="px-6 py-4 bg-white border-b border-[#E5E9F0] flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3">
             <div
@@ -214,15 +103,14 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-                  Appendix A • Popup Reference
+                  Raw Stadia | US Soccer — Playing Surface Indexes
                 </span>
                 <span className="text-[11px] font-mono font-bold text-emerald-800 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> FIFA &amp; Raw Stadia
-                  Benchmarks
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Impact • Energy • Grip
                 </span>
               </div>
               <h3 className="text-lg font-black text-[#2E3440] mt-0.5">
-                Surface Characteristic &amp; Physical Hardware Definitions
+                Core Surface Index Reference &amp; Reference Range Methodology
               </h3>
             </div>
           </div>
@@ -231,121 +119,232 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-[7px] bg-[#F1F5F9] hover:bg-[#E2E8F0] border border-[#CBD5E1] flex items-center justify-center text-[#434C5E] transition-colors"
-            title="Close Appendix A (Esc)"
+            title="Close Reference Guide (Esc)"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Search & Filter Bar */}
-        <div className="px-6 py-3 bg-[#F8FAFC] border-b border-[#E5E9F0] flex flex-wrap items-center justify-between gap-3 shrink-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              { id: 'ALL', label: 'All Definitions (9)' },
-              { id: 'Core Index (0–10)', label: '0–10 Core Indices (3)' },
-              { id: 'RAA Vertical Hardware', label: 'RAA Vertical Tester (3)' },
-              { id: 'RTT Rotational Hardware', label: 'RTT Rotational Tester (3)' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setCategoryFilter(tab.id)}
-                className={`px-3 py-1 rounded-[6px] text-xs border transition-all ${
-                  categoryFilter === tab.id
-                    ? 'bg-[#001489] text-white border-[#C69214] font-extrabold'
-                    : 'bg-white text-[#434C5E] border-[#CBD5E1] font-semibold hover:border-[#C69214]'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Scrollable Content */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {/* 1. Reference Range Methodology Explainer */}
+          {referenceProfile && (
+            <div className="bg-[#F8FAFC] border border-[#CBD5E1] border-l-[4px] border-l-[#7C3AED] rounded-[10px] p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#7C3AED]" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
+                    How Reference Ranges (REF &amp; Green Band) Are Calculated
+                  </h4>
+                </div>
+                <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200">
+                  Active Mode: {referenceProfile.label}
+                </span>
+              </div>
+              <p className="text-xs text-[#434C5E] leading-relaxed">
+                The Raw Stadia reference document defines the two directional poles for each index (
+                <strong>Soft vs. Hard Field</strong>, <strong>Dissipating vs. Rebounding Field</strong>,{' '}
+                <strong>Low vs. High Traction Field</strong>). Rather than guessing arbitrary cutoffs, the dashboard computes the{' '}
+                <strong className="text-purple-800">Purple REF Line (Mean)</strong> and{' '}
+                <strong className="text-emerald-800">Shaded Green Reference Range (Mean ± 1 SD)</strong>{' '}
+                directly from the empirical 18-zone measurements of the selected reference baseline:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+                {(['Impact', 'Energy', 'Grip'] as IndexName[]).map((m) => {
+                  const st = referenceProfile.metrics[m];
+                  return (
+                    <div
+                      key={m}
+                      className="bg-white border border-[#E2E8F0] rounded-[8px] p-3 flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="font-sans text-[10px] font-extrabold uppercase text-[#001489] block">
+                          {m} Reference
+                        </span>
+                        <strong className="text-sm font-black text-[#2E3440]">
+                          REF {st.mean.toFixed(2)} ± {st.sd.toFixed(2)} SD
+                        </strong>
+                      </div>
+                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Band: {st.bandMin.toFixed(2)}–{st.bandMax.toFixed(2)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          <div className="relative min-w-[220px] flex-1 max-w-xs">
-            <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search metric, unit (Gm, Nm, mm)..."
-              className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#CBD5E1] rounded-[6px] text-xs font-semibold text-[#2E3440] focus:outline-none focus:border-[#001489]"
-            />
-          </div>
-        </div>
-
-        {/* Scrollable Definitions Grid */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredEntries.map((item) => {
-              const isHighlighted =
-                highlightedKey &&
-                (item.key.toLowerCase() === highlightedKey.toLowerCase() ||
-                  item.term.toLowerCase().includes(highlightedKey.toLowerCase()));
+          {/* 2. The 3 Official Pages from "Raw Stadia | US Soccer - Indexes.pdf" */}
+          <div className="space-y-5">
+            {RAW_STADIA_KNOWLEDGE_SPECS.map((spec) => {
+              const isHighlighted = highlightedKey === spec.name;
+              const refSt = referenceProfile?.metrics[spec.name];
 
               return (
                 <div
-                  key={item.key}
-                  className={`rounded-[10px] p-4 border transition-all flex flex-col justify-between ${
+                  key={spec.name}
+                  className={`rounded-[12px] border p-5 transition-all ${
                     isHighlighted
-                      ? 'bg-[#EFF6FF] border-2 border-[#001489] ring-2 ring-[#C69214]/40 shadow-md'
-                      : 'bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#C69214]'
+                      ? 'bg-[#EFF6FF]/60 border-2 border-[#001489] ring-2 ring-[#C69214]/40 shadow-md'
+                      : 'bg-white border-[#E2E8F0]'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-[0.05em] text-[#C69214] block">
-                          {item.category} • {item.instrument}
+                  {/* Metric Header */}
+                  <div className="flex flex-wrap items-start justify-between gap-3 pb-3 mb-4 border-b border-[#E5E9F0]">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl font-black uppercase tracking-[0.06em] text-[#001489]">
+                          {spec.name}
                         </span>
-                        <h4 className="text-sm font-black text-[#2E3440] mt-0.5">{item.term}</h4>
+                        <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded bg-[#F1F5F9] text-[#434C5E] border border-[#CBD5E1]">
+                          {spec.hardwareTester}
+                        </span>
                       </div>
-                      <span className="text-[11px] font-mono font-extrabold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-300 whitespace-nowrap shrink-0">
-                        Opt: {item.optimalBand}
-                      </span>
+                      <p className="text-xs font-semibold text-[#2E3440] mt-1">{spec.subtitle}</p>
+                      <p className="text-[11px] text-[#64748B] font-medium mt-0.5">
+                        <strong className="text-[#434C5E]">Mechanical properties:</strong>{' '}
+                        {spec.mechanicalProperties.join(', ')}
+                      </p>
                     </div>
 
-                    <p className="text-xs text-[#434C5E] font-medium leading-relaxed mt-2">
-                      {item.definition}
-                    </p>
+                    {refSt && (
+                      <div className="bg-emerald-50 border border-emerald-300 rounded-[8px] px-3 py-1.5 text-right font-mono">
+                        <span className="text-[9px] font-sans font-extrabold uppercase tracking-wider text-emerald-900 block">
+                          Active Reference Band (Mean ± 1 SD)
+                        </span>
+                        <span className="text-xs font-black text-emerald-800">
+                          {refSt.bandMin.toFixed(2)} – {refSt.bandMax.toFixed(2)} (REF {refSt.mean.toFixed(2)})
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-[#E2E8F0] text-[11px] text-[#001489] font-semibold">
-                    <strong className="font-extrabold uppercase text-[10px] tracking-wider text-[#2E3440] mr-1">
-                      Practitioner Takeaway:
-                    </strong>
-                    {item.clinicalTakeaway}
+                  {/* Verbatim Quote */}
+                  <blockquote className="bg-[#F8FAFC] border-l-[4px] border-l-[#C69214] px-4 py-2.5 rounded-r-[8px] text-xs italic text-[#2E3440] font-medium mb-4">
+                    &ldquo;{spec.quote}&rdquo;
+                  </blockquote>
+
+                  {/* 2-Column Spectrum Table (Exact PDF Layout) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Left Pole (Low Spectrum: Soft / Dissipating / Low Traction) */}
+                    <div className="rounded-[10px] border border-emerald-300 bg-emerald-50/45 p-4 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                        <span className="text-xs font-black uppercase tracking-[0.06em] text-emerald-950">
+                          ← {spec.lowSpectrum.title}
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-emerald-800">
+                          Lower {spec.name}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Load Profile
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.lowSpectrum.loadLabel}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            {spec.lowSpectrum.secondaryAttributeLabel || 'Feels'}
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.lowSpectrum.feelsLabel}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Used For
+                          </span>
+                          <strong className="text-[#001489] font-extrabold">
+                            {spec.lowSpectrum.usedFor}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Tactical Use
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.lowSpectrum.tacticalUse}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-emerald-200/80 flex items-center justify-between text-xs">
+                        <span className="text-[10px] font-extrabold uppercase text-[#64748B]">
+                          Suggested Tissue / Injury Watch:
+                        </span>
+                        <span className="font-extrabold text-[#92400E] bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
+                          {spec.lowSpectrum.injuryRiskWatch}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right Pole (High Spectrum: Hard / Rebounding / High Traction) */}
+                    <div className="rounded-[10px] border border-emerald-300 bg-emerald-50/45 p-4 space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                        <span className="text-xs font-black uppercase tracking-[0.06em] text-emerald-950">
+                          {spec.highSpectrum.title} →
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-emerald-800">
+                          Higher {spec.name}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Load Profile
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.highSpectrum.loadLabel}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            {spec.highSpectrum.secondaryAttributeLabel || 'Feels'}
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.highSpectrum.feelsLabel}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Used For
+                          </span>
+                          <strong className="text-[#001489] font-extrabold">
+                            {spec.highSpectrum.usedFor}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-extrabold uppercase text-[#64748B] block">
+                            Tactical Use
+                          </span>
+                          <strong className="text-[#2E3440] font-extrabold">
+                            {spec.highSpectrum.tacticalUse}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="pt-2 border-t border-emerald-200/80 flex items-center justify-between text-xs">
+                        <span className="text-[10px] font-extrabold uppercase text-[#64748B]">
+                          Suggested Tissue / Injury Watch:
+                        </span>
+                        <span className="font-extrabold text-[#DA291C] bg-red-50 border border-red-200 px-2 py-0.5 rounded text-[11px]">
+                          {spec.highSpectrum.injuryRiskWatch}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
-
-          {/* Compact Training Goal Equations Quick-Reference inside Modal */}
-          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-4 mt-2">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="w-4 h-4 text-[#C69214]" />
-              <span className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
-                6 Training Goal Suitability Scores (0–10 Closed-Form Equations)
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-              {RAW_STADIA_KNOWLEDGE_SPECS.filter((s) => s.category === 'Training Goal Index').map((s) => (
-                <div key={s.name} className="bg-white border border-[#E2E8F0] rounded-[7px] p-2.5">
-                  <div className="font-extrabold text-[#001489]">{s.name}</div>
-                  <div className="text-[10px] font-mono font-bold text-[#64748B] mt-0.5">
-                    {s.formulaDisplay}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
         {/* Modal Footer */}
         <div className="px-6 py-3 bg-[#F8FAFC] border-t border-[#E5E9F0] flex items-center justify-between text-xs text-[#64748B] shrink-0">
           <span className="font-medium">
-            Tip: Click any <strong className="text-[#2E3440]">ⓘ</strong> icon next to a metric on
-            the dashboard to jump straight to its definition.
+            Source: <strong>Raw Stadia | US Soccer — Playing Surface Indexes (Impact, Energy, Grip)</strong>. Tissue tags represent suggested considerations, not deterministic thresholds.
           </span>
           <button
             type="button"

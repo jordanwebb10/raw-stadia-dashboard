@@ -1,5 +1,5 @@
 import { PitchEvaluation, RawPitchSeed } from '../types/rawStadia';
-import { computeCompositeBaseline, hydrateEvaluation } from '../utils/rawStadiaEngine';
+import { hydrateEvaluation } from '../utils/rawStadiaEngine';
 
 export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
   {
@@ -11,19 +11,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Baseline',
     notes:
-      'Pre-camp September baseline evaluation across NTC fields. High initial traction (Grip 7.3–7.6) prior to camp mowing/watering adjustments.',
-    hardwareMetrics: {
-      hardnessGm: 79.1,
-      shockAbsorptionPct: 63.2,
-      energyRestitutionPct: 17.8,
-      rotationalResistanceNm: 55.8,
-      studDepthMm: 13.1,
-      moisturePct: 27.6,
-    },
+      'Pre-camp September baseline evaluation across NTC fields. Impact 4.17, Energy 4.17, and elevated initial Grip (7.56) prior to camp mowing/watering adjustments.',
     impact: [4.0, 4.44, 4.0, 4.56, 4.0, 4.44, 4.0, 4.0, 4.0, 4.56, 4.56, 4.0, 4.0, 4.0, 4.0, 4.44, 4.0, 4.0],
     energy: [4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 4.3, 3.5],
     grip: [8.14, 8.57, 8.57, 6.71, 7.71, 8.14, 6.71, 6.71, 7.71, 9.29, 8.14, 6.71, 6.71, 8.14, 8.43, 6.71, 6.29, 6.71],
-    boot: [1.64, 1.71, 1.71, 3.21, 2.43, 2.07, 3.36, 3.21, 2.43, 0.71, 1.43, 3.43, 3.21, 1.64, 1.86, 2.93, 3.14, 3.21],
   },
   {
     id: 'ussf-super-4-2026-09-02',
@@ -34,19 +25,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Baseline',
     notes:
-      'Pre-camp September baseline evaluation across NTC fields. High initial traction (Grip 7.3–7.6) prior to camp mowing/watering adjustments.',
-    hardwareMetrics: {
-      hardnessGm: 79.1,
-      shockAbsorptionPct: 63.2,
-      energyRestitutionPct: 17.8,
-      rotationalResistanceNm: 55.8,
-      studDepthMm: 13.1,
-      moisturePct: 27.6,
-    },
+      'Pre-camp September baseline evaluation across NTC fields. Impact 4.17, Energy 4.17, and elevated initial Grip (7.56) prior to camp mowing/watering adjustments.',
     impact: [4.0, 4.44, 4.0, 4.56, 4.0, 4.44, 4.0, 4.0, 4.0, 4.56, 4.56, 4.0, 4.0, 4.0, 4.0, 4.44, 4.0, 4.0],
     energy: [4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 4.3, 3.5],
     grip: [8.14, 8.57, 8.57, 6.71, 7.71, 8.14, 6.71, 6.71, 7.71, 9.29, 8.14, 6.71, 6.71, 8.14, 8.43, 6.71, 6.29, 6.71],
-    boot: [1.64, 1.71, 1.71, 3.21, 2.43, 2.07, 3.36, 3.21, 2.43, 0.71, 1.43, 3.43, 3.21, 1.64, 1.86, 2.93, 3.14, 3.21],
   },
   {
     id: 'ussf-super-5-2026-09-02',
@@ -57,19 +39,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Baseline',
     notes:
-      'Pre-camp September baseline evaluation across NTC fields. High initial traction (Grip 7.3–7.6) prior to camp mowing/watering adjustments.',
-    hardwareMetrics: {
-      hardnessGm: 79.9,
-      shockAbsorptionPct: 63.0,
-      energyRestitutionPct: 17.6,
-      rotationalResistanceNm: 54.7,
-      studDepthMm: 12.6,
-      moisturePct: 27.3,
-    },
+      'Pre-camp September baseline evaluation across NTC fields. Impact 4.30, Energy 4.08, Grip 7.32.',
     impact: [4.56, 5.0, 4.0, 4.0, 5.0, 4.0, 4.56, 5.0, 4.56, 5.0, 5.0, 3.11, 4.56, 4.56, 3.11, 4.0, 3.11, 4.0],
     energy: [4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 4.3, 3.5, 3.5],
     grip: [7.14, 6.71, 6.29, 7.71, 8.14, 6.71, 6.71, 6.71, 7.14, 8.57, 8.14, 6.29, 6.71, 6.29, 7.14, 8.57, 8.57, 8.14],
-    boot: [2.43, 3.21, 3.57, 2.43, 2.07, 3.21, 3.21, 3.43, 3.0, 1.71, 2.07, 3.57, 3.21, 3.14, 3.0, 1.71, 2.57, 2.07],
   },
   {
     id: 'ussf-super-3-2026-09-21',
@@ -80,19 +53,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Recovery',
     notes:
-      'Camp Day 1 (Recovery Objective): Impact 4.2–4.9 (lower-impact range, limits peak loading). Energy consistent (3.9–4.1). Super 3 lower Grip (5.6) vs Field 4 (6.4). All 3 fields suitable for Recovery.',
-    hardwareMetrics: {
-      hardnessGm: 79.2,
-      shockAbsorptionPct: 63.2,
-      energyRestitutionPct: 17.3,
-      rotationalResistanceNm: 47.4,
-      studDepthMm: 10.1,
-      moisturePct: 27.6,
-    },
+      'Camp Day 1 (Recovery Objective): Impact 4.21 (lower-impact range, limits peak loading). Energy consistent (3.86). Super 3 lower Grip (5.57) vs Field 4 (6.39). All 3 fields suitable for Recovery.',
     impact: [3.11, 3.67, 4.56, 4.56, 5.11, 3.67, 3.11, 5.56, 5.11, 4.56, 4.56, 3.11, 3.11, 5.0, 4.56, 3.67, 3.67, 4.56],
     energy: [3.5, 3.5, 4.3, 3.5, 4.3, 3.5, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 3.5, 3.5, 3.5],
     grip: [5.71, 6.71, 5.29, 7.14, 4.86, 5.29, 5.29, 5.57, 5.29, 5.57, 5.57, 5.29, 5.71, 4.86, 3.43, 6.71, 6.0, 6.0],
-    boot: [4.14, 3.43, 5.14, 3.29, 4.93, 5.21, 4.57, 4.5, 4.57, 4.14, 4.71, 4.93, 4.57, 4.93, 6.21, 3.64, 4.21, 4.57],
   },
   {
     id: 'ussf-super-4-2026-09-21',
@@ -103,19 +67,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Recovery',
     notes:
-      'Camp Day 1 (Recovery Objective): Impact 4.2–4.9 (lower-impact range, limits peak loading). Energy consistent (3.9–4.1). Super 3 lower Grip (5.6) vs Field 4 (6.4). All 3 fields suitable for Recovery.',
-    hardwareMetrics: {
-      hardnessGm: 80.7,
-      shockAbsorptionPct: 62.7,
-      energyRestitutionPct: 17.3,
-      rotationalResistanceNm: 50.8,
-      studDepthMm: 11.3,
-      moisturePct: 26.9,
-    },
+      'Camp Day 1 (Recovery Objective): Impact 4.42 (lower-impact range, limits peak loading). Energy consistent (3.86). Field 4 Grip 6.39.',
     impact: [4.56, 4.56, 4.56, 4.56, 5.56, 5.11, 3.67, 4.56, 5.56, 3.67, 4.56, 4.56, 3.67, 3.11, 4.56, 4.56, 4.56, 3.67],
     energy: [3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 3.5, 4.3, 3.5, 3.5, 4.3, 1.9, 4.3, 3.5],
     grip: [6.43, 7.14, 6.0, 7.14, 8.57, 6.43, 6.43, 6.43, 6.0, 6.71, 6.0, 6.0, 6.29, 6.71, 5.29, 6.43, 5.71, 5.29],
-    boot: [3.64, 2.86, 4.0, 3.29, 1.71, 4.0, 3.64, 3.43, 4.0, 3.64, 4.14, 4.0, 3.71, 3.21, 4.5, 3.64, 4.57, 4.93],
   },
   {
     id: 'ussf-super-5-2026-09-21',
@@ -126,19 +81,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Recovery',
     notes:
-      'Camp Day 1 (Recovery Objective): Impact 4.2–4.9 (lower-impact range, limits peak loading). Energy consistent (3.9–4.1). Super 3 lower Grip (5.6) vs Field 4 (6.4). All 3 fields suitable for Recovery.',
-    hardwareMetrics: {
-      hardnessGm: 83.6,
-      shockAbsorptionPct: 61.8,
-      energyRestitutionPct: 17.7,
-      rotationalResistanceNm: 49.8,
-      studDepthMm: 11.1,
-      moisturePct: 25.8,
-    },
+      'Camp Day 1 (Recovery Objective): Impact 4.86, Energy 4.12, Grip 6.14.',
     impact: [5.11, 5.11, 4.56, 5.11, 5.11, 5.11, 3.67, 5.11, 5.11, 5.11, 5.11, 3.67, 5.11, 5.11, 5.11, 5.56, 5.11, 3.67],
     energy: [4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5],
     grip: [6.71, 6.29, 5.57, 6.71, 6.29, 6.71, 5.29, 5.57, 5.57, 5.57, 5.43, 8.14, 6.0, 7.14, 5.57, 6.43, 6.0, 5.57],
-    boot: [3.43, 3.71, 4.36, 3.43, 3.57, 2.79, 4.36, 4.14, 4.14, 4.29, 4.5, 2.29, 3.93, 3.5, 4.57, 3.64, 4.0, 4.36],
   },
   {
     id: 'ussf-super-3-2026-09-22',
@@ -149,19 +95,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 2 (Metabolic Objective): Impact 4.2–5.0. Field 4 most suitable overall when splitting into 2 groups. Two localized high-Grip areas on Fields 4 & 5 flagged for Grounds team.',
-    hardwareMetrics: {
-      hardnessGm: 79.8,
-      shockAbsorptionPct: 63.0,
-      energyRestitutionPct: 17.2,
-      rotationalResistanceNm: 47.4,
-      studDepthMm: 10.1,
-      moisturePct: 27.3,
-    },
+      'Camp Day 2 (Metabolic Objective): Impact 4.29, Energy 3.77, Grip 5.57. Field 4 most suitable overall when splitting into 2 groups.',
     impact: [3.67, 3.67, 5.56, 5.11, 3.11, 4.56, 5.11, 3.67, 4.56, 5.11, 3.67, 4.56, 4.56, 4.56, 3.11, 4.56, 4.56, 3.11],
     energy: [3.5, 3.5, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 3.5, 4.3, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 4.3, 3.5],
     grip: [5.71, 6.71, 5.29, 7.14, 4.86, 5.29, 5.29, 5.57, 5.29, 5.57, 5.57, 5.29, 5.71, 4.86, 3.43, 6.71, 6.0, 6.0],
-    boot: [4.14, 3.43, 5.14, 3.29, 4.93, 5.21, 4.57, 4.5, 4.57, 4.14, 4.71, 4.93, 4.57, 4.93, 6.21, 3.64, 4.21, 4.57],
   },
   {
     id: 'ussf-super-4-2026-09-22',
@@ -172,19 +109,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 2 (Metabolic Objective): Impact 4.2–5.0. Field 4 most suitable overall when splitting into 2 groups. Two localized high-Grip areas on Fields 4 & 5 flagged for Grounds team.',
-    hardwareMetrics: {
-      hardnessGm: 79.4,
-      shockAbsorptionPct: 63.1,
-      energyRestitutionPct: 17.3,
-      rotationalResistanceNm: 50.8,
-      studDepthMm: 11.3,
-      moisturePct: 27.4,
-    },
+      'Camp Day 2 (Metabolic Objective): Impact 4.22, Energy 3.86, Grip 6.39. Field 4 most suitable overall when splitting into 2 groups. Localized high-Grip zone (8.57) flagged for Grounds team.',
     impact: [3.67, 4.56, 3.67, 4.56, 5.56, 4.56, 3.11, 4.56, 4.56, 5.11, 3.67, 3.67, 3.67, 4.56, 3.67, 4.56, 4.56, 3.67],
     energy: [3.5, 4.3, 3.5, 4.3, 4.3, 4.3, 3.5, 4.3, 3.5, 4.3, 3.5, 3.5, 3.5, 4.3, 3.5, 4.3, 3.5, 3.5],
     grip: [6.43, 7.14, 6.0, 7.14, 8.57, 6.43, 6.43, 6.43, 6.0, 6.71, 6.0, 6.0, 6.29, 6.71, 5.29, 6.43, 5.71, 5.29],
-    boot: [3.64, 2.86, 4.0, 3.29, 1.71, 4.0, 3.64, 3.43, 4.0, 3.64, 4.14, 4.0, 3.71, 3.21, 4.5, 3.64, 4.57, 4.93],
   },
   {
     id: 'ussf-super-5-2026-09-22',
@@ -195,19 +123,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 2 (Metabolic Objective): Impact 4.2–5.0. Field 4 most suitable overall when splitting into 2 groups. Two localized high-Grip areas on Fields 4 & 5 flagged for Grounds team.',
-    hardwareMetrics: {
-      hardnessGm: 84.2,
-      shockAbsorptionPct: 61.6,
-      energyRestitutionPct: 17.5,
-      rotationalResistanceNm: 49.8,
-      studDepthMm: 11.1,
-      moisturePct: 25.6,
-    },
+      'Camp Day 2 (Metabolic Objective): Impact 4.96, Energy 3.99, Grip 6.14. Localized high-Grip zone (8.14) flagged for Grounds team.',
     impact: [5.11, 5.56, 4.56, 3.67, 6.0, 4.56, 5.11, 5.11, 4.56, 5.11, 4.22, 5.11, 5.56, 5.11, 4.56, 4.56, 5.11, 5.56],
     energy: [4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 3.5, 4.3, 2.7, 4.3, 3.5, 3.5, 4.3, 4.3],
     grip: [6.71, 6.29, 5.57, 6.71, 6.29, 6.71, 5.29, 5.57, 5.57, 5.57, 5.43, 8.14, 6.0, 7.14, 5.57, 6.43, 6.0, 5.57],
-    boot: [3.43, 3.71, 4.36, 3.43, 3.57, 2.79, 4.36, 4.14, 4.14, 4.29, 4.5, 2.29, 3.93, 3.5, 4.57, 3.64, 4.0, 4.36],
   },
   {
     id: 'ussf-super-3-2026-09-23',
@@ -218,19 +137,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 3 (Metabolic Objective): Fields 4 & 5 recommended for longer runs and large spaces. Field 3 showed very low Impact (3.1 avg, down to 2.0 on left half adjacent to gym), making it less responsive.',
-    hardwareMetrics: {
-      hardnessGm: 72.1,
-      shockAbsorptionPct: 65.5,
-      energyRestitutionPct: 17.2,
-      rotationalResistanceNm: 47.4,
-      studDepthMm: 10.1,
-      moisturePct: 30.3,
-    },
+      'Camp Day 3 (Metabolic Objective): Field 3 showed very low Impact (3.06 avg, down to 2.0 on left half adjacent to gym), making it softer and more energy-dissipating.',
     impact: [2.0, 2.0, 2.0, 4.0, 2.0, 2.0, 3.11, 4.0, 3.11, 4.0, 4.0, 2.0, 4.56, 3.11, 4.56, 2.0, 4.0, 3.11],
     energy: [3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 4.3, 3.5, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 3.5, 4.3, 3.5],
     grip: [5.71, 6.71, 5.29, 7.14, 4.86, 5.29, 5.29, 5.57, 5.29, 5.57, 5.57, 5.29, 5.71, 4.86, 3.43, 6.71, 6.0, 6.0],
-    boot: [4.14, 3.43, 5.14, 3.29, 4.93, 5.21, 4.57, 4.5, 4.57, 4.14, 4.71, 4.93, 4.57, 4.93, 6.21, 3.64, 4.21, 4.57],
   },
   {
     id: 'ussf-super-4-2026-09-23',
@@ -241,19 +151,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 3 (Metabolic Objective): Fields 4 & 5 recommended for longer runs and large spaces. Field 3 showed very low Impact (3.1 avg, down to 2.0 on left half adjacent to gym), making it less responsive.',
-    hardwareMetrics: {
-      hardnessGm: 77.5,
-      shockAbsorptionPct: 63.8,
-      energyRestitutionPct: 17.7,
-      rotationalResistanceNm: 50.8,
-      studDepthMm: 11.3,
-      moisturePct: 28.2,
-    },
+      'Camp Day 3 (Metabolic Objective): Fields 4 (Impact 3.92, Energy 4.12, Grip 6.39) & 5 recommended for longer runs and large spaces.',
     impact: [4.0, 4.56, 4.0, 4.0, 4.56, 3.11, 4.56, 4.0, 2.0, 4.56, 4.56, 4.0, 4.0, 2.89, 4.0, 4.56, 4.0, 3.11],
     energy: [4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 3.5],
     grip: [6.43, 7.14, 6.0, 7.14, 8.57, 6.43, 6.43, 6.43, 6.0, 6.71, 6.0, 6.0, 6.29, 6.71, 5.29, 6.43, 5.71, 5.29],
-    boot: [3.64, 2.86, 4.0, 3.29, 1.71, 4.0, 3.64, 3.43, 4.0, 3.64, 4.14, 4.0, 3.71, 3.21, 4.5, 3.64, 4.57, 4.93],
   },
   {
     id: 'ussf-super-5-2026-09-23',
@@ -264,19 +165,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Metabolic',
     notes:
-      'Camp Day 3 (Metabolic Objective): Fields 4 & 5 recommended for longer runs and large spaces. Field 3 showed very low Impact (3.1 avg, down to 2.0 on left half adjacent to gym), making it less responsive.',
-    hardwareMetrics: {
-      hardnessGm: 82.7,
-      shockAbsorptionPct: 62.1,
-      energyRestitutionPct: 18.1,
-      rotationalResistanceNm: 49.8,
-      studDepthMm: 11.1,
-      moisturePct: 26.2,
-    },
+      'Camp Day 3 (Metabolic Objective): Field 5 (Impact 4.73, Energy 4.39, Grip 6.14) recommended alongside Field 4 for longer runs and large spaces.',
     impact: [5.56, 5.56, 5.56, 4.56, 4.56, 6.67, 4.56, 4.56, 3.11, 4.0, 4.56, 4.0, 4.56, 4.56, 6.0, 4.56, 3.11, 5.0],
     energy: [4.3, 4.3, 4.3, 4.3, 4.3, 5.1, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 5.9, 4.3, 4.3, 4.3],
     grip: [6.71, 6.29, 5.57, 6.71, 6.29, 6.71, 5.29, 5.57, 5.57, 5.57, 5.43, 8.14, 6.0, 7.14, 5.57, 6.43, 6.0, 5.57],
-    boot: [3.43, 3.71, 4.36, 3.43, 3.57, 2.79, 4.36, 4.14, 4.14, 4.29, 4.5, 2.29, 3.93, 3.5, 4.57, 3.64, 4.0, 4.36],
   },
   {
     id: 'ussf-super-3-2026-09-24',
@@ -287,19 +179,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Camp Day 4 (Reaction / Set-Piece Objective): Field 5 preferred for Reaction objective (Impact 4.2, Energy 4.1, Grip 6.1). Field 3 softer (Impact 3.6).',
-    hardwareMetrics: {
-      hardnessGm: 75.5,
-      shockAbsorptionPct: 64.4,
-      energyRestitutionPct: 17.5,
-      rotationalResistanceNm: 47.4,
-      studDepthMm: 10.1,
-      moisturePct: 28.9,
-    },
+      'Camp Day 4 (Reaction / Set-Piece Objective): Field 3 softer (Impact 3.63, Energy 3.99, Grip 5.57) compared to Field 5.',
     impact: [2.0, 4.0, 4.56, 4.56, 4.56, 4.56, 3.11, 4.56, 4.0, 3.11, 4.56, 4.0, 3.11, 2.0, 2.0, 4.0, 2.0, 4.56],
     energy: [3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 3.5, 3.5, 4.3, 3.5, 4.3],
     grip: [5.71, 6.71, 5.29, 7.14, 4.86, 5.29, 5.29, 5.57, 5.29, 5.57, 5.57, 5.29, 5.71, 4.86, 3.43, 6.71, 6.0, 6.0],
-    boot: [4.14, 3.43, 5.14, 3.29, 4.93, 5.21, 4.57, 4.5, 4.57, 4.14, 4.71, 4.93, 4.57, 4.93, 6.21, 3.64, 4.21, 4.57],
   },
   {
     id: 'ussf-super-4-2026-09-24',
@@ -310,19 +193,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Camp Day 4 (Reaction / Set-Piece Objective): Field 5 preferred for Reaction objective (Impact 4.2, Energy 4.1, Grip 6.1). Field 3 softer (Impact 3.6).',
-    hardwareMetrics: {
-      hardnessGm: 77.5,
-      shockAbsorptionPct: 63.8,
-      energyRestitutionPct: 17.5,
-      rotationalResistanceNm: 50.8,
-      studDepthMm: 11.3,
-      moisturePct: 28.2,
-    },
+      'Camp Day 4 (Reaction / Set-Piece Objective): Field 4 Impact 3.93, Energy 3.99, Grip 6.39.',
     impact: [2.0, 4.56, 4.56, 4.56, 4.56, 4.0, 3.11, 4.0, 3.11, 4.56, 2.89, 4.0, 3.11, 4.0, 4.0, 4.0, 5.0, 4.56],
     energy: [3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 3.5, 4.3, 4.3, 4.3, 1.9, 4.3, 4.3, 4.3, 4.3, 4.3],
     grip: [6.43, 7.14, 6.0, 7.14, 8.57, 6.43, 6.43, 6.43, 6.0, 6.71, 6.0, 6.0, 6.29, 6.71, 5.29, 6.43, 5.71, 5.29],
-    boot: [3.64, 2.86, 4.0, 3.29, 1.71, 4.0, 3.64, 3.43, 4.0, 3.64, 4.14, 4.0, 3.71, 3.21, 4.5, 3.64, 4.57, 4.93],
   },
   {
     id: 'ussf-super-5-2026-09-24',
@@ -333,19 +207,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Camp Day 4 (Reaction / Set-Piece Objective): Field 5 preferred for Reaction objective (Impact 4.2, Energy 4.1, Grip 6.1). Field 3 softer (Impact 3.6).',
-    hardwareMetrics: {
-      hardnessGm: 79.2,
-      shockAbsorptionPct: 63.2,
-      energyRestitutionPct: 17.6,
-      rotationalResistanceNm: 49.8,
-      studDepthMm: 11.1,
-      moisturePct: 27.5,
-    },
+      'Camp Day 4 (Reaction / Set-Piece Objective): Field 5 preferred for Reaction objective (Impact 4.19, Energy 4.08, Grip 6.14).',
     impact: [4.0, 4.56, 3.11, 4.56, 4.56, 4.56, 4.0, 6.0, 3.11, 4.56, 4.56, 3.67, 3.67, 3.11, 3.11, 5.11, 6.0, 3.11],
     energy: [3.5, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 2.7, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3],
     grip: [6.71, 6.29, 5.57, 6.71, 6.29, 6.71, 5.29, 5.57, 5.57, 5.57, 5.43, 8.14, 6.0, 7.14, 5.57, 6.43, 6.0, 5.57],
-    boot: [3.43, 3.71, 4.36, 3.43, 3.57, 2.79, 4.36, 4.14, 4.14, 4.29, 4.5, 2.29, 3.93, 3.5, 4.57, 3.64, 4.0, 4.36],
   },
   {
     id: 'orlando---interco-stadium-2026-09-25',
@@ -356,19 +221,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Orlando MD-1 Training Evaluation: Inter&Co Stadium tested ahead of match day. Impact avg 3.75 with localized soft spots (2.0); Energy 4.12; Grip 6.21 with one central spike (8.1 in Zone 8).',
-    hardwareMetrics: {
-      hardnessGm: 76.4,
-      shockAbsorptionPct: 64.1,
-      energyRestitutionPct: 17.7,
-      rotationalResistanceNm: 50.1,
-      studDepthMm: 9.9,
-      moisturePct: 28.6,
-    },
+      'Orlando MD-1 Training Evaluation (from 18-zone CSV): Impact avg 3.75 with localized soft spots (2.0); Energy 4.12; Grip 6.21 with one central spike (8.14 in Zone 8).',
     impact: [4.0, 4.0, 2.0, 4.56, 4.56, 3.11, 4.0, 4.0, 4.0, 4.0, 4.56, 3.67, 2.0, 4.56, 4.0, 4.0, 4.44, 2.0],
     energy: [4.3, 4.3, 3.5, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5],
     grip: [6.43, 6.71, 6.71, 6.71, 6.0, 6.71, 6.29, 8.14, 6.43, 5.29, 6.0, 6.0, 6.43, 6.0, 5.57, 6.0, 4.86, 5.57],
-    boot: [5.07, 4.36, 4.21, 4.36, 4.79, 4.21, 4.57, 3.71, 4.43, 5.36, 4.79, 4.79, 4.57, 4.79, 5.14, 4.79, 5.93, 5.36],
   },
   {
     id: 'orlando-interco-md-2026-09-26',
@@ -376,22 +232,13 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     venue: 'Inter&Co Stadium (Orlando, FL)',
     surfaceType: 'Natural Grass (Match Day Prep)',
     date: '2026-09-26',
-    sourceType: 'EMAIL_MATCHDAY_REPORT',
+    sourceType: 'EMAIL_STADIUM_REPORT',
     sessionObjective: 'Speed',
     notes:
-      'Match Day Stadium Evaluation (Orlando): Impact rose from 3.75 (MD-1) to 4.80 (MD) after game-day rolling/mowing. Energy uniform at 4.3 across all 18 zones. Center-pitch Zone 8 (Pos X=2, Y=3) retained an elevated Grip hotspot of 8.1.',
-    hardwareMetrics: {
-      hardnessGm: 81.4,
-      shockAbsorptionPct: 61.8,
-      energyRestitutionPct: 18.0,
-      rotationalResistanceNm: 50.2,
-      studDepthMm: 10.2,
-      moisturePct: 24.5,
-    },
+      'Match Day Stadium Evaluation (Orlando Email Report): Impact rose from 3.75 (MD-1) to 4.80 (MD). Energy uniform at 4.3 across all 18 zones. Center-pitch Zone 8 (Pos X=2, Y=3) retained a Grip reading of 8.1.',
     impact: [4.0, 5.0, 4.0, 4.0, 5.6, 5.6, 5.6, 5.6, 5.6, 4.6, 4.6, 5.6, 4.0, 4.6, 4.0, 5.1, 4.6, 4.0],
     energy: [4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3],
     grip: [6.4, 6.7, 6.7, 6.7, 6.0, 6.7, 6.3, 8.1, 6.4, 5.3, 6.0, 6.0, 6.4, 6.0, 5.6, 6.0, 4.9, 5.6],
-    boot: [3.7, 3.4, 3.4, 3.4, 4.1, 3.4, 3.8, 2.0, 3.7, 4.8, 4.1, 4.1, 3.7, 4.1, 4.5, 4.1, 5.2, 4.5],
   },
   {
     id: 'ussf-super-3-2026-09-28',
@@ -402,19 +249,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Return to NTC (Reaction Objective): Fields 4 (Impact 4.8, Energy 4.1, Grip 6.4) and 5 (Impact 5.1, Energy 4.1, Grip 6.1) recommended for Reaction session.',
-    hardwareMetrics: {
-      hardnessGm: 81.3,
-      shockAbsorptionPct: 62.5,
-      energyRestitutionPct: 17.5,
-      rotationalResistanceNm: 47.4,
-      studDepthMm: 10.1,
-      moisturePct: 26.7,
-    },
+      'Return to NTC (Reaction Objective): Field 3 Impact 4.51, Energy 3.99, Grip 5.57.',
     impact: [4.56, 4.22, 3.11, 4.56, 5.11, 3.11, 5.11, 4.56, 4.56, 4.56, 4.56, 3.67, 4.56, 5.11, 5.11, 5.11, 4.56, 5.11],
     energy: [4.3, 3.5, 3.5, 3.5, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3],
     grip: [5.71, 6.71, 5.29, 7.14, 4.86, 5.29, 5.29, 5.57, 5.29, 5.57, 5.57, 5.29, 5.71, 4.86, 3.43, 6.71, 6.0, 6.0],
-    boot: [4.14, 3.43, 5.14, 3.29, 4.93, 5.21, 4.57, 4.5, 4.57, 4.14, 4.71, 4.93, 4.57, 4.93, 6.21, 3.64, 4.21, 4.57],
   },
   {
     id: 'ussf-super-4-2026-09-28',
@@ -425,19 +263,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Return to NTC (Reaction Objective): Fields 4 (Impact 4.8, Energy 4.1, Grip 6.4) and 5 (Impact 5.1, Energy 4.1, Grip 6.1) recommended for Reaction session.',
-    hardwareMetrics: {
-      hardnessGm: 81.8,
-      shockAbsorptionPct: 62.4,
-      energyRestitutionPct: 17.6,
-      rotationalResistanceNm: 50.8,
-      studDepthMm: 11.3,
-      moisturePct: 26.5,
-    },
+      'Return to NTC (Reaction Objective): Field 4 (Impact 4.59, Energy 4.08, Grip 6.39) recommended alongside Field 5 for Reaction session.',
     impact: [5.11, 5.11, 5.11, 4.56, 5.56, 3.11, 4.56, 4.56, 5.11, 5.11, 4.56, 3.67, 3.67, 4.56, 4.56, 3.67, 4.56, 5.56],
     energy: [4.3, 4.3, 4.3, 3.5, 4.3, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 3.5, 4.3, 4.3],
     grip: [6.43, 7.14, 6.0, 7.14, 8.57, 6.43, 6.43, 6.43, 6.0, 6.71, 6.0, 6.0, 6.29, 6.71, 5.29, 6.43, 5.71, 5.29],
-    boot: [3.64, 2.86, 4.0, 3.29, 1.71, 4.0, 3.64, 3.43, 4.0, 3.64, 4.14, 4.0, 3.71, 3.21, 4.5, 3.64, 4.57, 4.93],
   },
   {
     id: 'ussf-super-5-2026-09-28',
@@ -448,19 +277,10 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     sourceType: 'CSV_18_ZONE',
     sessionObjective: 'Reaction',
     notes:
-      'Return to NTC (Reaction Objective): Fields 4 (Impact 4.8, Energy 4.1, Grip 6.4) and 5 (Impact 5.1, Energy 4.1, Grip 6.1) recommended for Reaction session.',
-    hardwareMetrics: {
-      hardnessGm: 84.8,
-      shockAbsorptionPct: 61.4,
-      energyRestitutionPct: 17.6,
-      rotationalResistanceNm: 49.8,
-      studDepthMm: 11.1,
-      moisturePct: 25.4,
-    },
+      'Return to NTC (Reaction Objective): Field 5 (Impact 5.05, Energy 4.08, Grip 6.14) recommended alongside Field 4 for Reaction session.',
     impact: [5.11, 5.11, 5.11, 5.11, 4.22, 3.67, 5.11, 5.11, 5.11, 5.11, 5.11, 4.56, 5.56, 5.56, 5.11, 5.11, 6.0, 5.11],
     energy: [4.3, 4.3, 4.3, 4.3, 3.5, 3.5, 4.3, 4.3, 4.3, 4.3, 4.3, 3.5, 4.3, 4.3, 4.3, 2.7, 4.3, 4.3],
     grip: [6.71, 6.29, 5.57, 6.71, 6.29, 6.71, 5.29, 5.57, 5.57, 5.57, 5.43, 8.14, 6.0, 7.14, 5.57, 6.43, 6.0, 5.57],
-    boot: [3.43, 3.71, 4.36, 3.43, 3.57, 2.79, 4.36, 4.14, 4.14, 4.29, 4.5, 2.29, 3.93, 3.5, 4.57, 3.64, 4.0, 4.36],
   },
   {
     id: 'st-louis-energizer-park-md-2026-09-29',
@@ -468,22 +288,13 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     venue: 'Energizer Park (St. Louis, MO)',
     surfaceType: 'Natural Grass (Match Day)',
     date: '2026-09-29',
-    sourceType: 'EMAIL_MATCHDAY_REPORT',
+    sourceType: 'EMAIL_STADIUM_REPORT',
     sessionObjective: 'Speed',
     notes:
-      'Match Day Stadium Report (vs CHI): Highest Impact values measured during camp to date, driven by elevated Hardness across the pitch. Grounds crew restricted on-pitch RTT testing on MD but supplied 6-zone Rotational Resistance data (one zone reached an unacceptable 73.1 Nm peak). Benches located on south side (bottom touchline).',
-    hardwareMetrics: {
-      hardnessGm: 98.5,
-      shockAbsorptionPct: 57.4,
-      energyRestitutionPct: 18.2,
-      rotationalResistanceNm: 54.8,
-      studDepthMm: 9.1,
-      moisturePct: 21.0,
-    },
+      'Match Day Stadium Report (St. Louis Email Summary): Elevated Impact values across the pitch (mean 6.68, range 6.1–7.3), Energy 4.44, Grip 6.49 (with one localized high-traction zone at 8.4).',
     impact: [6.4, 6.5, 6.1, 6.5, 7.0, 6.8, 7.1, 7.3, 6.8, 6.7, 7.2, 6.9, 6.6, 6.8, 6.4, 6.2, 6.4, 6.3],
     energy: [4.3, 4.5, 4.3, 4.3, 4.5, 4.5, 4.5, 4.7, 4.5, 4.5, 4.5, 4.5, 4.3, 4.5, 4.3, 4.3, 4.3, 4.3],
     grip: [6.3, 6.4, 6.1, 6.1, 6.4, 6.3, 6.6, 8.4, 6.5, 6.5, 6.8, 6.6, 6.2, 6.3, 6.0, 6.0, 6.3, 6.2],
-    boot: [3.8, 3.7, 4.0, 4.0, 3.7, 3.8, 3.5, 1.7, 3.6, 3.6, 3.3, 3.5, 3.9, 3.8, 4.1, 4.1, 3.8, 3.9],
   },
   {
     id: 'arizona-state-farm-md-2026-10-03',
@@ -491,22 +302,13 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     venue: 'State Farm Stadium (Glendale, AZ)',
     surfaceType: 'Newly Installed Sod on Retractable Tray',
     date: '2026-10-03',
-    sourceType: 'EMAIL_MATCHDAY_REPORT',
+    sourceType: 'EMAIL_STADIUM_REPORT',
     sessionObjective: 'Speed',
     notes:
-      'Match Day Stadium Report (vs MEX): Newly installed sod playing its first match. High localized Hardness (up to 104 Gm) and Impact (5.1 to 7.7). Perimeter traction testing (10+ locations) revealed shallow Stud Depth (mean 8.6 mm, range 7–10 mm) due to compact rootzone; sharper/conical studs recommended to ensure penetration and prevent slipping.',
-    hardwareMetrics: {
-      hardnessGm: 96.2,
-      shockAbsorptionPct: 58.1,
-      energyRestitutionPct: 17.6,
-      rotationalResistanceNm: 46.5,
-      studDepthMm: 8.6,
-      moisturePct: 22.4,
-    },
+      'Match Day Stadium Report (Arizona Email Summary): Newly installed sod playing its first match. Impact values ranged from 5.1 to 7.7 (mean 6.29), Energy 4.19, Grip 5.79.',
     impact: [5.4, 5.8, 5.1, 6.0, 6.8, 6.2, 6.9, 7.7, 6.6, 6.8, 7.5, 7.1, 6.4, 6.9, 6.1, 5.3, 6.0, 5.5],
     energy: [4.0, 4.3, 4.0, 4.0, 4.3, 4.3, 4.3, 4.5, 4.3, 4.3, 4.5, 4.3, 4.0, 4.3, 4.0, 4.0, 4.3, 4.0],
     grip: [5.6, 5.7, 5.5, 5.7, 6.0, 5.8, 6.0, 6.2, 5.9, 5.8, 6.1, 5.9, 5.7, 5.9, 5.6, 5.4, 5.6, 5.5],
-    boot: [5.8, 5.7, 5.9, 5.7, 5.4, 5.6, 5.5, 5.2, 5.5, 5.6, 5.3, 5.5, 5.7, 5.5, 5.8, 6.0, 5.8, 5.9],
   },
   {
     id: 'minnesota-allianz-field-md-2026-10-06',
@@ -514,58 +316,14 @@ export const RAW_PITCH_SEEDS: RawPitchSeed[] = [
     venue: 'Allianz Field (St. Paul, MN)',
     surfaceType: 'Natural Grass (Heated Kentucky Bluegrass)',
     date: '2026-10-06',
-    sourceType: 'EMAIL_MATCHDAY_REPORT',
+    sourceType: 'EMAIL_STADIUM_REPORT',
     sessionObjective: 'Speed',
     notes:
-      'Match Day Stadium Report (Minnesota): Elevated Impact across the pitch (up to 7.7) with highest Hardness on the right half (103–107 Gm). Strong Energy Restitution (avg 18.3%). On-field traction tested across 13 zones showed balanced Grip & Rotational Resistance with improved Stud Depth vs Arizona -> Firm Ground Long (FG-L) cleats recommended.',
-    hardwareMetrics: {
-      hardnessGm: 97.8,
-      shockAbsorptionPct: 58.5,
-      energyRestitutionPct: 18.3,
-      rotationalResistanceNm: 49.4,
-      studDepthMm: 10.8,
-      moisturePct: 25.2,
-    },
+      'Match Day Stadium Report (Minnesota Email Summary): High Impact across the pitch (mean 6.69, up to 7.7 on right side), responsive Energy (4.55), and balanced Grip (6.32).',
     impact: [5.6, 5.8, 5.5, 5.8, 6.1, 5.9, 6.4, 6.6, 6.2, 6.9, 7.3, 7.1, 7.5, 7.7, 7.3, 7.4, 7.7, 7.6],
     energy: [4.3, 4.5, 4.3, 4.3, 4.5, 4.5, 4.5, 4.7, 4.5, 4.5, 4.7, 4.7, 4.7, 4.8, 4.7, 4.5, 4.7, 4.5],
     grip: [6.1, 6.2, 6.0, 6.2, 6.4, 6.3, 6.4, 6.6, 6.3, 6.4, 6.6, 6.5, 6.4, 6.5, 6.3, 6.1, 6.3, 6.2],
-    boot: [4.5, 4.4, 4.6, 4.5, 4.3, 4.4, 4.3, 4.2, 4.4, 4.3, 4.2, 4.2, 4.3, 4.3, 4.4, 4.5, 4.4, 4.5],
   },
 ];
 
 export const INITIAL_EVALUATIONS: PitchEvaluation[] = RAW_PITCH_SEEDS.map(hydrateEvaluation);
-
-// Reference Benchmarks (REF Anchors requested by Jordan Webb on Sept 26)
-const campNtcEvals = INITIAL_EVALUATIONS.filter(
-  (e) => e.pitchName.startsWith('USSF Super') && e.date >= '2026-09-21'
-);
-const super3Evals = campNtcEvals.filter((e) => e.pitchName === 'USSF Super 3');
-const super4Evals = campNtcEvals.filter((e) => e.pitchName === 'USSF Super 4');
-const super5Evals = campNtcEvals.filter((e) => e.pitchName === 'USSF Super 5');
-
-export const REFERENCE_BENCHMARKS: PitchEvaluation[] = [
-  computeCompositeBaseline(
-    campNtcEvals,
-    'ref-ntc-camp-composite',
-    'NTC Camp Average (Super 3/4/5)',
-    'Composite reference baseline across all Sept 21–28 NTC training evaluations (USSF Super 3, 4, and 5). Used as the default REF anchor on 0–10 stadium gauges.'
-  ),
-  computeCompositeBaseline(
-    super3Evals,
-    'ref-ntc-super-3',
-    'NTC Super 3 Baseline',
-    'Camp average for USSF Super 3 (lower Grip 5.57, softer Impact 3.93).'
-  ),
-  computeCompositeBaseline(
-    super4Evals,
-    'ref-ntc-super-4',
-    'NTC Super 4 Baseline',
-    'Camp average for USSF Super 4 (higher Grip 6.39, balanced Impact 4.21).'
-  ),
-  computeCompositeBaseline(
-    super5Evals,
-    'ref-ntc-super-5',
-    'NTC Super 5 Baseline',
-    'Camp average for USSF Super 5 (firmest NTC pitch, Impact 4.75, Energy 4.13, Grip 6.14).'
-  ),
-];
