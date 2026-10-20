@@ -22,7 +22,7 @@ export const ENRICHED_APPENDIX_A: AppendixAEntry[] = [
     definition:
       'Quantifies overall surface firmness, compaction, and vertical force attenuation during foot strike. Lower scores (< 3.5) indicate a soft, compliant, energy-absorbing pitch; higher scores (> 6.5) indicate a firm, compact, high-deceleration surface.',
     clinicalTakeaway:
-      'High Impact (> 6.5) elevates peak tibial shock and Achilles/patellar tendon loading; Low Impact (< 3.5) increases eccentric muscular fatigue.',
+      'Suggested consideration: Higher Impact (> 6.5) may increase peak braking impulse and tendon loading; lower Impact (< 3.5) can increase muscular work and ground contact time.',
   },
   {
     key: 'Energy',
@@ -33,7 +33,7 @@ export const ENRICHED_APPENDIX_A: AppendixAEntry[] = [
     definition:
       'Measures elastic energy return (springiness vs. damping) when an athlete pushes off the turf. Low scores (< 3.5) mean the surface dissipates mechanical work; high scores (> 5.5) mean the surface returns elastic energy rapidly.',
     clinicalTakeaway:
-      'Higher Energy relative to Impact improves running economy and supports MD+1 regeneration; Low Energy increases metabolic heart-rate cost.',
+      'Suggested consideration: Higher Energy relative to Impact can support running economy and MD+1 regeneration; lower Energy may contribute to higher internal metabolic cost.',
   },
   {
     key: 'Grip',
@@ -44,44 +44,44 @@ export const ENRICHED_APPENDIX_A: AppendixAEntry[] = [
     definition:
       'Quantifies rotational and linear shear traction between cleat studs and the rootzone during planting, cutting, and deceleration.',
     clinicalTakeaway:
-      'Values ≥ 8.0 create excessive rotational foot fixation (stud lock), elevating knee/ankle torque; values < 5.0 increase slipping risk and require longer studs.',
+      'Suggested consideration: Values ≥ 8.0 indicate stronger rotational cleat fixation (consider conical FG-S studs); values < 5.0 suggest reduced shear traction where longer studs may help.',
   },
   ...APPENDIX_A_DEFINITIONS.map((d) => {
     let key = d.term;
     let cat: AppendixAEntry['category'] = 'RAA Vertical Hardware';
     let takeaway =
-      'Used alongside the 0–10 indices to diagnose rootzone moisture, compaction, and cleat selection.';
+      'Used alongside the 0–10 indices to help contextualize rootzone moisture, compaction, and suggested cleat options.';
 
     if (d.term.includes('Hardness')) {
       key = 'Hardness';
       cat = 'RAA Vertical Hardware';
       takeaway =
-        'Values > 85 Gm indicate hard, compact soil; values < 60 Gm indicate soft, wet, or heavily aerated turf.';
+        'Suggested context: Values > 85 Gm indicate firmer, more compact turf; values < 60 Gm indicate softer, wetter, or newly aerated rootzones.';
     } else if (d.term.includes('Shock Absorption')) {
       key = 'ShockAbsorption';
       cat = 'RAA Vertical Hardware';
       takeaway =
-        'Higher % means greater cushioning relative to concrete; below 55% signals high lower-limb impact stress.';
+        'Suggested context: Higher % means greater vertical force attenuation relative to concrete; below 55% indicates a firmer underfoot profile.';
     } else if (d.term.includes('Energy Restitution')) {
       key = 'EnergyRestitution';
       cat = 'RAA Vertical Hardware';
       takeaway =
-        'Measures vertical rebound efficiency; higher % produces a faster, springier pitch feel.';
+        'Suggested context: Measures vertical rebound efficiency; higher % produces a faster, springier pitch feel.';
     } else if (d.term.includes('Rotational Resistance')) {
       key = 'RotationalTorque';
       cat = 'RTT Rotational Hardware';
       takeaway =
-        'Peak torque > 52 Nm warns of excessive stud lock; < 30 Nm warns of loss of footing during sharp cuts.';
+        'Suggested context: Peak torque > 52 Nm indicates high rotational fixation; < 30 Nm indicates lower shear resistance during cutting.';
     } else if (d.term.includes('Stud Penetration')) {
       key = 'StudDepth';
       cat = 'RTT Rotational Hardware';
       takeaway =
-        'Primary driver of cleat stud length: < 9.0 mm requires shorter FG-S studs; > 12.0 mm allows Mixed/SG metal studs.';
+        'Suggested cleat context: < 9.0 mm often favors shorter FG-S studs; > 12.0 mm can accommodate Mixed/SG studs depending on player preference.';
     } else if (d.term.includes('Boot')) {
       key = 'Boot';
       cat = 'RTT Rotational Hardware';
       takeaway =
-        '< 2.2 = SG Metal | 2.2–4.0 = Mixed SG/FG | 4.0–5.3 = FG-L | 5.3–7.2 = FG-S Conical | > 7.2 = AG.';
+        'Suggested soleplate guide: < 2.2 = SG Metal | 2.2–4.0 = Mixed SG/FG | 4.0–5.3 = FG-L | 5.3–7.2 = FG-S Conical | > 7.2 = AG.';
     }
 
     return {

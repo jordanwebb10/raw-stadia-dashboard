@@ -2,12 +2,16 @@ import React, { useMemo, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
-  ArrowRight,
+  BookOpen,
   Calendar,
   CheckCircle2,
-  Footprints,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Info,
   Layers,
-  ShieldAlert,
+  Microscope,
+  Scale,
   TrendingUp,
 } from 'lucide-react';
 import { IndexName, PitchEvaluation } from '../types/rawStadia';
@@ -36,58 +40,58 @@ interface ClinicalLensSpec {
 const CLINICAL_LENSES: ClinicalLensSpec[] = [
   {
     id: 'patellar_achilles',
-    title: 'Patellar & Achilles Tendinopathy',
-    shortBadge: 'Tendon Load & Stiffness Shock',
+    title: 'Patellar & Achilles Tendon Load Context',
+    shortBadge: 'Suggested Lens • Tendon & Stiffness',
     defaultMetric: 'Impact',
-    pathologyFocus: 'Patellar tendinosis, Achilles tendinopathy, tibial stress, anterior knee pain',
+    pathologyFocus: 'Contextual watch-area for patellar tendinosis, Achilles soreness, and anterior knee load',
     mechanismSummary:
-      'Elevated surface firmness (Impact > 6.0, Hardness > 85 Gm), abrupt soft-to-hard day-to-day transitions (Δ Impact ≥ +0.8), and high within-pitch variance (SD ≥ 0.65) increase peak vertical ground reaction force (vGRF) braking impulse and patellar tendon tensile/compressive strain rate during deceleration.',
+      'Higher surface firmness (e.g., Impact > 6.0, Hardness > 85 Gm), steeper soft-to-firm day-to-day transitions (Δ Impact ≥ +0.8), or wider within-pitch variance (SD ≥ 0.65) can shorten impact attenuation time and may contribute to higher braking impulse during deceleration.',
     managementGuidance:
-      'Monitor high-minute & tendinopathy-managed players during rapid upward Impact transitions (+0.8 or greater) and when 18-zone SD exceeds ±0.65. Prioritize cushioned midsoles/FG-S conical studs on firm pitches (> 85 Gm) and adjust deceleration/plyometric volume on MD-1/MD+1.',
+      'Suggested consideration: When transitioning abruptly to firmer surfaces or high-variance pitches, consider cross-checking subjective soreness in players with existing patellar/Achilles history, evaluating cushioned/conical FG-S footwear options, or moderating high-eccentric deceleration volume where appropriate.',
   },
   {
     id: 'muscular_fatigue',
-    title: 'Calf / Hamstring Tightness & Eccentric Fatigue',
-    shortBadge: 'Soft / Dissipating Turf Work',
+    title: 'Calf / Hamstring Work & Metabolic Demand',
+    shortBadge: 'Suggested Lens • Compliant Turf Work',
     defaultMetric: 'Energy',
-    pathologyFocus: 'Soleus/gastrocnemius tightness, hamstring eccentric overload, metabolic fatigue',
+    pathologyFocus: 'Contextual watch-area for soleus/gastrocnemius tightness, posterior chain fatigue, and internal load',
     mechanismSummary:
-      'Compliant, energy-dissipating surfaces (Impact < 3.8 or Energy < 3.8) deform excessively under foot strike, increasing ground contact time and requiring greater concentric and eccentric muscle-tendon work for every stride.',
+      'More compliant, energy-dissipating surfaces (e.g., Impact < 3.8 or Energy < 3.8) deform further under foot strike, which biomechanically increases ground contact time and can elevate concentric/eccentric muscle-tendon work and metabolic cost for a given running speed.',
     managementGuidance:
-      'When camp sessions dip below the Ideal Range (Impact < 4.0 or Energy < 3.8) or exhibit localized soft zones (≤ 2.5), account for elevated internal physiological load relative to GPS external distance.',
+      'Suggested consideration: When sessions fall below the target window (Impact < 4.0 or Energy < 3.8) or show localized soft zones, consider that internal physiological effort and lower-calf/hamstring fatigue may be slightly elevated relative to GPS external distance.',
   },
   {
     id: 'joint_torque',
-    title: 'Knee & Ankle Rotational Stress',
-    shortBadge: 'Stud Fixation & Peak Torque',
+    title: 'Knee & Ankle Rotational Fixation Context',
+    shortBadge: 'Suggested Lens • Peak Torque & Release',
     defaultMetric: 'Grip',
-    pathologyFocus: 'Syndesmosis/ankle torque, meniscal/collateral knee stress, forefoot stud lock',
+    pathologyFocus: 'Contextual watch-area for ankle/syndesmosis torque, knee rotational moments, and cleat release',
     mechanismSummary:
-      'Excessive rotational traction (Grip > 7.2 mean or localized zone spikes ≥ 8.0, Rotational Torque > 52 Nm) prevents natural cleat release during cutting and pivoting, transmitting high torsional moments to the ankle and knee.',
+      'Higher rotational resistance (e.g., Grip > 7.2 mean, localized zone spikes ≥ 8.0, or Rotational Torque > 52 Nm) indicates stronger cleat-turf fixation during pivoting, which can increase external transverse-plane moments transmitted to the ankle and knee if studs do not release cleanly.',
     managementGuidance:
-      'Avoid aggressive bladed or long metal studs when Grip exceeds 7.2 or when localized central/box zones reach ≥ 8.0. Recommend conical Firm Ground (FG-S / FG-L) outsoles to facilitate cleaner rotational release.',
+      'Suggested consideration: On higher-grip surfaces or pitches with high central-corridor torque spikes, consider suggesting conical Firm Ground (FG-S / FG-L) outsoles over aggressive bladed or long metal studs to encourage smoother rotational release.',
   },
   {
     id: 'groin_adductor',
-    title: 'Adductor / Groin Shear & Slip Risk',
-    shortBadge: 'Shallow Penetration & Slip',
+    title: 'Adductor / Groin Shear & Slip Context',
+    shortBadge: 'Suggested Lens • Penetration & Slip',
     defaultMetric: 'StudDepth',
-    pathologyFocus: 'Adductor longus strain, hip flexor irritation, lateral cut micro-slipping',
+    pathologyFocus: 'Contextual watch-area for lateral cut micro-slipping and adductor/hip flexor stabilization load',
     mechanismSummary:
-      'Compact rootzones or newly laid sod with shallow stud penetration (< 9.5 mm) or low shear traction (Grip < 5.5) reduce lateral purchase during high-velocity cutting, triggering rapid eccentric adductor stabilization.',
+      'Compact rootzones or newly laid sod with shallower stud penetration (< 9.5 mm) or lower shear traction (Grip < 5.5) can reduce lateral cleat purchase during high-velocity cutting, potentially increasing rapid reactive stabilization demands on the adductors.',
     managementGuidance:
-      'When Stud Penetration Depth drops below 9.5 mm on firm turf, avoid long wide studs that sit on top of the surface ("skating" effect); transition to sharper conical FG-S studs for reliable penetration.',
+      'Suggested consideration: When Stud Penetration Depth dips below ~9.5 mm on firmer turf, players who feel they are "skating" on long/wide studs may benefit from testing shorter, sharper conical FG-S studs for more consistent penetration.',
   },
   {
     id: 'general',
     title: 'All-Metric Longitudinal Overview',
     shortBadge: 'General Surface Progression',
     defaultMetric: 'Impact',
-    pathologyFocus: 'Complete multi-parameter camp surface audit across all 0–10 indices & RAA/RTT sensors',
+    pathologyFocus: 'Multi-parameter camp surface overview across 0–10 indices & RAA/RTT hardware sensors',
     mechanismSummary:
-      'Tracks chronological team surface exposure (Mean ± 1 SD and 18-zone Min–Max spread) against the Ideal Range and reference benchmark across the selected date window.',
+      'Displays chronological team surface exposure (Mean ± 1 SD and 18-zone Min–Max spread) alongside the suggested target range and reference benchmark across the selected date window.',
     managementGuidance:
-      'Select any surface index or physical sensor below to inspect day-over-day shifts, spatial variance ribbons, and footwear alignment.',
+      'Select any surface index or physical sensor below to inspect day-over-day shifts, within-pitch variance ribbons, and suggested footwear considerations.',
   },
 ];
 
@@ -118,9 +122,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 8.5,
     idealMin: 4.0,
     idealMax: 6.0,
-    idealLabel: 'Ideal Range: 4.0 – 6.0',
-    highZoneLabel: 'High Stiffness / Tendon Load (> 6.0)',
-    lowZoneLabel: 'Soft / High Muscular Fatigue (< 4.0)',
+    idealLabel: 'Target Range: 4.0 – 6.0',
+    highZoneLabel: 'Firmer Surface / Suggested Tendon Watch (> 6.0)',
+    lowZoneLabel: 'Softer Surface / Higher Muscular Work (< 4.0)',
     significantShiftThreshold: 0.75,
     highSdThreshold: 0.65,
     appendixKey: 'Impact',
@@ -134,9 +138,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 7.5,
     idealMin: 3.8,
     idealMax: 5.5,
-    idealLabel: 'Ideal Range: 3.8 – 5.5',
-    highZoneLabel: 'Fast Rebound (> 5.5)',
-    lowZoneLabel: 'Energy Dissipating / Heavy (< 3.8)',
+    idealLabel: 'Target Range: 3.8 – 5.5',
+    highZoneLabel: 'Higher Rebound (> 5.5)',
+    lowZoneLabel: 'More Energy-Dissipating / Heavy (< 3.8)',
     significantShiftThreshold: 0.5,
     highSdThreshold: 0.45,
     appendixKey: 'Energy',
@@ -150,9 +154,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 9.5,
     idealMin: 5.5,
     idealMax: 7.2,
-    idealLabel: 'Ideal Range: 5.5 – 7.2',
-    highZoneLabel: 'High Fixation / Torque Risk (> 7.2)',
-    lowZoneLabel: 'Low Traction / Slip Risk (< 5.5)',
+    idealLabel: 'Target Range: 5.5 – 7.2',
+    highZoneLabel: 'Higher Fixation / Torque Watch (> 7.2)',
+    lowZoneLabel: 'Lower Traction / Slip Watch (< 5.5)',
     significantShiftThreshold: 0.65,
     highSdThreshold: 0.65,
     appendixKey: 'Grip',
@@ -166,9 +170,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 112,
     idealMin: 68,
     idealMax: 85,
-    idealLabel: 'Ideal Range: 68 – 85 Gm',
-    highZoneLabel: 'Hard Surface / Peak Shock (> 85 Gm)',
-    lowZoneLabel: 'Soft / Heavy Rootzone (< 68 Gm)',
+    idealLabel: 'Target Range: 68 – 85 Gm',
+    highZoneLabel: 'Firmer Surface / Peak Decel Watch (> 85 Gm)',
+    lowZoneLabel: 'Softer / Heavier Rootzone (< 68 Gm)',
     significantShiftThreshold: 7.0,
     highSdThreshold: 4.5,
     appendixKey: 'Hardness',
@@ -182,9 +186,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 15.0,
     idealMin: 9.5,
     idealMax: 13.5,
-    idealLabel: 'Ideal Range: 9.5 – 13.5 mm',
-    highZoneLabel: 'Deep Penetration / Soft Rootzone (> 13.5 mm)',
-    lowZoneLabel: 'Shallow Penetration / Slip Risk (< 9.5 mm)',
+    idealLabel: 'Target Range: 9.5 – 13.5 mm',
+    highZoneLabel: 'Deeper Penetration / Softer Rootzone (> 13.5 mm)',
+    lowZoneLabel: 'Shallower Penetration / Slip Watch (< 9.5 mm)',
     significantShiftThreshold: 1.2,
     highSdThreshold: 1.0,
     appendixKey: 'StudDepth',
@@ -198,9 +202,9 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     yMax: 68,
     idealMin: 35,
     idealMax: 52,
-    idealLabel: 'Ideal Range: 35 – 52 Nm',
-    highZoneLabel: 'Excessive Torque / Stud Lock (> 52 Nm)',
-    lowZoneLabel: 'Low Shear Resistance (< 35 Nm)',
+    idealLabel: 'Target Range: 35 – 52 Nm',
+    highZoneLabel: 'Higher Rotational Torque Watch (> 52 Nm)',
+    lowZoneLabel: 'Lower Shear Resistance (< 35 Nm)',
     significantShiftThreshold: 4.0,
     highSdThreshold: 3.5,
     appendixKey: 'RotationalTorque',
@@ -215,8 +219,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 2.5,
     idealMax: 5.3,
     idealLabel: 'Standard FG/Mixed Window: 2.5 – 5.3',
-    highZoneLabel: 'Short Stud / Conical FG-S (> 5.3)',
-    lowZoneLabel: 'Long Metal SG Required (< 2.5)',
+    highZoneLabel: 'Suggested Short / Conical FG-S Window (> 5.3)',
+    lowZoneLabel: 'Suggested Soft-Ground SG Window (< 2.5)',
     significantShiftThreshold: 0.75,
     highSdThreshold: 0.65,
     appendixKey: 'Boot',
@@ -231,8 +235,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 4.5,
     idealMax: 6.5,
     idealLabel: 'Target Window: 4.5 – 6.5',
-    highZoneLabel: 'Fast / High Peak Stiffness (> 6.5)',
-    lowZoneLabel: 'Slow / Dissipating (< 4.5)',
+    highZoneLabel: 'Fast / Firmer Stiffness (> 6.5)',
+    lowZoneLabel: 'Slower / More Dissipating (< 4.5)',
     significantShiftThreshold: 0.6,
     highSdThreshold: 0.5,
     appendixKey: 'Impact',
@@ -247,8 +251,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 5.2,
     idealMax: 6.5,
     idealLabel: 'Target Recovery Window: 5.2 – 6.5',
-    highZoneLabel: 'High Cushion / Rebound (> 6.5)',
-    lowZoneLabel: 'Harsh / Poor Recovery (< 5.2)',
+    highZoneLabel: 'Higher Cushion / Rebound (> 6.5)',
+    lowZoneLabel: 'Firmer / Less Forgiving for Recovery (< 5.2)',
     significantShiftThreshold: 0.5,
     highSdThreshold: 0.45,
     appendixKey: 'Impact',
@@ -279,8 +283,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 5.5,
     idealMax: 7.2,
     idealLabel: 'Target Window: 5.5 – 7.2',
-    highZoneLabel: 'High Internal Cost (> 7.2)',
-    lowZoneLabel: 'Low Metabolic Demand (< 5.5)',
+    highZoneLabel: 'Higher Internal Cost (> 7.2)',
+    lowZoneLabel: 'Lower Metabolic Demand (< 5.5)',
     significantShiftThreshold: 0.55,
     highSdThreshold: 0.45,
     appendixKey: 'Energy',
@@ -295,8 +299,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 5.0,
     idealMax: 7.0,
     idealLabel: 'Target Window: 5.0 – 7.0',
-    highZoneLabel: 'High Force / Traction (> 7.0)',
-    lowZoneLabel: 'Compliant / Low Force (< 5.0)',
+    highZoneLabel: 'Higher Force / Traction (> 7.0)',
+    lowZoneLabel: 'More Compliant / Lower Force (< 5.0)',
     significantShiftThreshold: 0.6,
     highSdThreshold: 0.5,
     appendixKey: 'Impact',
@@ -311,8 +315,8 @@ const METRIC_CONFIGS: Record<ProgressionMetricKey, MetricChartConfig> = {
     idealMin: 6.0,
     idealMax: 7.8,
     idealLabel: 'Target Window: 6.0 – 7.8',
-    highZoneLabel: 'High Aerobic / Soft Turf (> 7.8)',
-    lowZoneLabel: 'Firm / Fast Surface (< 6.0)',
+    highZoneLabel: 'Higher Aerobic / Softer Turf (> 7.8)',
+    lowZoneLabel: 'Firmer / Faster Surface (< 6.0)',
     significantShiftThreshold: 0.6,
     highSdThreshold: 0.5,
     appendixKey: 'Energy',
@@ -392,6 +396,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     'daily_team'
   );
   const [selectedPointKey, setSelectedPointKey] = useState<string | null>(null);
+  const [showScienceExplainer, setShowScienceExplainer] = useState<boolean>(true);
 
   const activeLensSpec =
     CLINICAL_LENSES.find((l) => l.id === clinicalLens) || CLINICAL_LENSES[0];
@@ -408,7 +413,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
   // Extract metric values for a given evaluation or group of evaluations
   const extractMetricStats = (evals: PitchEvaluation[], metric: ProgressionMetricKey) => {
     if (metric === 'Hardness') {
-      // Synthesize zone-level hardness distribution from Impact zones + hardware mean
       const vals: number[] = [];
       evals.forEach((ev) => {
         const baseH = ev.hardwareMetrics.hardnessGm;
@@ -476,11 +480,12 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     const rawPoints = filteredDates.map((date) => {
       const dateEvals = evaluations.filter((e) => e.date === date);
 
-      // Determine representative session surface for that date (e.g. Stadium if away, or recommended NTC pitch)
       const repEval =
         dateEvals.find((e) => !e.pitchName.startsWith('USSF Super')) ||
         dateEvals.find((e) => e.id === selectedPrimaryId) ||
-        dateEvals.find((e) => e.pitchName === 'USSF Super 4' && (date === '2026-09-21' || date === '2026-09-22')) ||
+        dateEvals.find(
+          (e) => e.pitchName === 'USSF Super 4' && (date === '2026-09-21' || date === '2026-09-22')
+        ) ||
         dateEvals.find((e) => e.pitchName === 'USSF Super 5') ||
         dateEvals[0];
 
@@ -541,7 +546,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       };
     });
 
-    // Compute day-over-day delta
     return rawPoints.map((pt, idx) => ({
       ...pt,
       deltaFromPrev:
@@ -571,7 +575,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
     const aboveIdealPts = chronologicalPoints.filter((p) => p.mean > metricCfg.idealMax);
     const belowIdealPts = chronologicalPoints.filter((p) => p.mean < metricCfg.idealMin);
 
-    // Steepest day-to-day shift
     let maxShiftPt = chronologicalPoints[0];
     let prevOfMaxShift = chronologicalPoints[0];
     let maxAbsDelta = 0;
@@ -584,7 +587,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       }
     }
 
-    // Highest within-session variance (SD)
     const maxSdPt = [...chronologicalPoints].sort((a, b) => b.sd - a.sd)[0];
 
     return {
@@ -605,7 +607,6 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       const found = chronologicalPoints.find((p) => p.key === selectedPointKey);
       if (found) return found;
     }
-    // Default to the steepest shift point or latest match day so the inspector shows immediate clinical value
     return (
       windowDiagnostics?.maxShiftPt ||
       chronologicalPoints[chronologicalPoints.length - 1]
@@ -666,7 +667,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
   const formatVal = (v: number) =>
     metricCfg.unit === 'Gm' || metricCfg.unit === 'Nm' ? v.toFixed(1) : v.toFixed(2);
 
-  // Evaluate clinical risk flag for any chronological point
+  // Evaluate suggested contextual status for any chronological point
   const getPointClinicalStatus = (pt: ChronologicalPoint) => {
     if (trendMetric === 'StudDepth') {
       if (pt.mean < metricCfg.idealMin) {
@@ -674,7 +675,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           status: 'overload' as const,
           color: '#DA291C',
           badgeBg: 'bg-red-50 text-[#DA291C] border-red-300',
-          label: 'Shallow Stud Penetration (< 9.5 mm) — Slip / Adductor Risk',
+          label: 'Suggested Watch: Shallower Penetration (< 9.5 mm) — Slip / Adductor Context',
         };
       }
       if (pt.mean > metricCfg.idealMax) {
@@ -682,7 +683,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           status: 'caution' as const,
           color: '#D97706',
           badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
-          label: 'Deep Penetration (> 13.5 mm) — Soft / Heavy Turf',
+          label: 'Suggested Watch: Deeper Penetration (> 13.5 mm) — Softer Turf',
         };
       }
     } else {
@@ -693,10 +694,10 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           badgeBg: 'bg-red-50 text-[#DA291C] border-red-300',
           label:
             trendMetric === 'Impact' || trendMetric === 'Hardness'
-              ? 'Above Ideal — High Patellar / Achilles Tendon Braking Load'
+              ? 'Above Target Window — Suggested Watch: Firm Surface / Tendon Load'
               : trendMetric === 'Grip' || trendMetric === 'RotationalTorque'
-              ? 'Above Ideal — Elevated Rotational Fixation / Joint Torque'
-              : 'Above Ideal Range',
+              ? 'Above Target Window — Suggested Watch: Higher Rotational Fixation'
+              : 'Above Suggested Target Window',
         };
       }
       if (pt.mean < metricCfg.idealMin) {
@@ -706,8 +707,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
           label:
             trendMetric === 'Impact' || trendMetric === 'Energy'
-              ? 'Below Ideal — Soft / Energy-Dissipating (Calf & Hamstring Fatigue)'
-              : 'Below Ideal Range',
+              ? 'Below Target Window — Suggested Watch: Compliant / Higher Muscular Work'
+              : 'Below Suggested Target Window',
         };
       }
     }
@@ -717,7 +718,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         status: 'variance' as const,
         color: '#D97706',
         badgeBg: 'bg-amber-50 text-amber-900 border-amber-300',
-        label: `High Spatial Variance (±${formatVal(pt.sd)} SD) — Inconsistent Underfoot Stiffness`,
+        label: `Suggested Watch: Higher Spatial Variance (±${formatVal(pt.sd)} SD Across Zones)`,
       };
     }
 
@@ -725,14 +726,14 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       status: 'optimal' as const,
       color: '#001489',
       badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-300',
-      label: 'Within Ideal Biomechanical Range',
+      label: 'Within Suggested Target Window',
     };
   };
 
   return (
     <div className="space-y-6">
       {/* ===================================================================
-          1. TOP FILTER BAR: DATE RANGE FILTER + CLINICAL LENS SELECTOR
+          1. TOP FILTER BAR: DATE RANGE FILTER + SUGGESTED CLINICAL LENS
           =================================================================== */}
       <div
         className="bg-white border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[10px] p-5 space-y-4"
@@ -740,16 +741,19 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       >
         <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#E5E9F0]">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <TrendingUp className="w-5 h-5 text-[#C69214]" />
               <h2 className="text-lg font-extrabold text-[#2E3440]">
-                Camp Surface Progression &amp; Clinical Load Inspector
+                Camp Surface Progression &amp; Contextual Load Inspector
               </h2>
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2.5 py-0.5 rounded-full bg-amber-50 text-[#92400E] border border-amber-300">
+                Suggested Decision-Support • Non-Absolute
+              </span>
             </div>
             <p className="text-xs text-[#64748B] font-medium mt-0.5">
               Field-independent chronological exposure tracking (<strong className="text-[#2E3440]">Mean ± 1 SD</strong>{' '}
-              variance over time) against the <strong className="text-emerald-700">Ideal Range</strong> and{' '}
-              <strong className="text-purple-700">Reference Baseline</strong> to evaluate player soreness and chronic tendon/muscle loading.
+              variance over time) against the <strong className="text-emerald-700">Suggested Target Range</strong> and{' '}
+              <strong className="text-purple-700">Reference Baseline</strong> to help contextualize player feedback and chronic tissue management.
             </p>
           </div>
 
@@ -827,13 +831,29 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           </div>
         </div>
 
-        {/* Clinical Complaint / Pathology Lens Selector */}
+        {/* Suggested Clinical Context / Tissue Watch-Area Selector */}
         <div className="space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#434C5E] flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-[#DA291C]" />
-              1. Select Clinical Complaint / Chronic Injury Lens:
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#434C5E] flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-[#C69214]" />
+                1. Select Suggested Clinical Context / Tissue Watch-Area (Exploratory Lens):
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowScienceExplainer((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-[11px] font-extrabold bg-[#EFF6FF] text-[#001489] border border-[#BFDBFE] hover:border-[#001489] transition-all"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#C69214]" />
+                {showScienceExplainer ? 'Hide Science & Evidence Explainer' : 'View Science & Evidence Explainer'}
+                {showScienceExplainer ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </div>
+
             <div className="flex items-center gap-2 text-xs">
               <span className="text-[11px] font-bold text-[#64748B]">Multi-Field Day Mode:</span>
               <div className="inline-flex bg-[#F1F5F9] p-0.5 rounded-[6px] border border-[#E2E8F0]">
@@ -886,7 +906,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     </div>
                   </div>
                   <div className="mt-2 pt-1.5 border-t border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono font-bold text-[#001489]">
-                    <span>Primary: {METRIC_CONFIGS[lens.defaultMetric].shortLabel}</span>
+                    <span>Default Metric: {METRIC_CONFIGS[lens.defaultMetric].shortLabel}</span>
                     <span>→</span>
                   </div>
                 </button>
@@ -897,11 +917,139 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       </div>
 
       {/* ===================================================================
+          1B. SCIENTIFIC EVIDENCE & THEORETICAL FRAMEWORK EXPLAINER
+          =================================================================== */}
+      {showScienceExplainer && (
+        <div
+          className="bg-white border border-[#CBD5E1] border-l-[4px] border-l-[#C69214] rounded-[10px] p-5 space-y-4"
+          style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[#E5E9F0]">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#001489]" />
+                <h3 className="text-sm font-extrabold uppercase tracking-[0.05em] text-[#001489]">
+                  Scientific Basis &amp; Interpretation Guide: Surface-to-Tissue Associations
+                </h3>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                  Suggested Context • Not Deterministic
+                </span>
+              </div>
+              <p className="text-xs text-[#434C5E] font-medium leading-relaxed max-w-4xl">
+                <strong className="text-[#2E3440]">How to interpret these recommendations:</strong>{' '}
+                Associating mechanical pitch metrics with specific anatomical structures (tendons, calves/hamstrings, knee/ankle joints, adductors) combines{' '}
+                <strong>direct mechanical testing</strong> with <strong>established sports biomechanics principles</strong>, bridged by{' '}
+                <strong>operational heuristics</strong>. Because athlete soreness and injury risk are multifactorial—depending on prior pathology, acute/chronic workload, footwear, and movement strategy—all tissue associations and guidance in this tool are presented as{' '}
+                <strong className="text-[#001489]">suggested considerations to guide clinical discussion, never as absolute rules or standalone injury predictors.</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowScienceExplainer(false)}
+              className="text-xs font-bold text-[#64748B] hover:text-[#2E3440] px-2.5 py-1 rounded border border-[#E2E8F0] bg-[#F8FAFC]"
+            >
+              Collapse Explainer
+            </button>
+          </div>
+
+          {/* 3-Tier Scientific Transparency Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Tier 1: Direct Mechanical Measurement */}
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    Tier 1 • Direct Sensor Physics
+                  </span>
+                  <Microscope className="w-4 h-4 text-emerald-700" />
+                </div>
+                <h4 className="text-xs font-black text-[#2E3440]">
+                  What Is Directly Measured on the Pitch
+                </h4>
+                <p className="text-[11px] text-[#434C5E] leading-relaxed">
+                  Each pitch evaluation samples <strong>18 standardized zones</strong> using two mechanical test rigs modeled on FIFA Quality Programme standards:
+                </p>
+                <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
+                  <li>
+                    <strong>RAA (Raw Artificial Athlete):</strong> Drops a 20 kg mass onto a spring-loaded test foot to directly quantify peak deceleration (<strong>Hardness in Gm</strong>), vertical deformation (<strong>Shock Absorption %</strong>), and rebound (<strong>Energy Restitution %</strong>).
+                  </li>
+                  <li>
+                    <strong>RTT (Raw Traction Tester):</strong> Applies 46 kg vertical load to a 6-stud test foot to directly record peak shear release torque (<strong>Rotational Resistance in Nm</strong>) and cleat sinkage (<strong>Stud Penetration Depth in mm</strong>).
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[10px] font-bold text-emerald-800">
+                Confidence: High (Empirical mechanical ground truth across 18 pitch zones)
+              </div>
+            </div>
+
+            {/* Tier 2: Peer-Reviewed Biomechanics */}
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-blue-50 text-[#001489] border border-blue-200">
+                    Tier 2 • Peer-Reviewed Biomechanics
+                  </span>
+                  <Scale className="w-4 h-4 text-[#001489]" />
+                </div>
+                <h4 className="text-xs font-black text-[#2E3440]">
+                  What Sports Science Literature Supports
+                </h4>
+                <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
+                  <li>
+                    <strong>Surface Stiffness &amp; Leg/Tendon Tuning:</strong> Athletes adjust leg stiffness (<span className="font-mono">k_leg</span>) inversely to surface stiffness (<span className="font-mono">k_surface</span>) (<em>Ferris &amp; Farley, 1997; Kerdok et al., 2002</em>). Firmer pitches shorten time-to-peak vertical ground reaction force (vGRF) during braking, and rapid surface transitions can challenge tendon accommodation (<em>Rennie et al., 2016</em>).
+                  </li>
+                  <li>
+                    <strong>Compliant Turf &amp; Muscular/Metabolic Work:</strong> Softer, energy-absorbing turf increases ground contact time and surface deformation, elevating oxygen cost (<span className="font-mono">VO2</span>), blood lactate, and perceived lower-limb exertion at matched running speeds (<em>Pinnington &amp; Dawson, 2001; Gaudino et al., 2013</em>).
+                  </li>
+                  <li>
+                    <strong>Rotational Fixation &amp; Joint Torque:</strong> High shoe-surface rotational traction and bladed cleat lock increase peak transverse-plane moments at the ankle and knee during cutting (<em>Torg et al., 1974; Villwock et al., 2009; Wannop et al., 2013</em>).
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-3 pt-2 border-t border-[#E2E8F0] text-[10px] font-bold text-[#001489]">
+                Confidence: Well-established physiological &amp; biomechanical directional mechanisms
+              </div>
+            </div>
+
+            {/* Tier 3: Suggested Operational Heuristics */}
+            <div className="bg-[#FEF3C7]/35 border border-[#FDE68A] rounded-[8px] p-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] px-2 py-0.5 rounded bg-amber-100 text-[#92400E] border border-amber-300">
+                    Tier 3 • Suggested Practitioner Heuristics
+                  </span>
+                  <Compass className="w-4 h-4 text-[#92400E]" />
+                </div>
+                <h4 className="text-xs font-black text-[#2E3440]">
+                  What Is Suggested Context (Not Absolute)
+                </h4>
+                <p className="text-[11px] text-[#434C5E] leading-relaxed">
+                  Because mechanical devices drop or rotate rigid weights vertically and horizontally—whereas players adapt neuromusculoskeletal strategy dynamically—specific numeric cutoffs and clinical labels are <strong>practical heuristics</strong>:
+                </p>
+                <ul className="text-[11px] text-[#434C5E] space-y-1.5 pl-4 list-disc">
+                  <li>
+                    <strong>Target Windows &amp; Shift Thresholds:</strong> Ranges like Impact <span className="font-mono">4.0–6.0</span>, Grip <span className="font-mono">5.5–7.2</span>, day-to-day shift <span className="font-mono">Δ ≥ 0.75</span>, or zone spread <span className="font-mono">SD ≥ 0.65</span> serve as reference guideposts rather than rigid pass/fail boundaries.
+                  </li>
+                  <li>
+                    <strong>Tissue Labels &amp; Footwear Suggestions:</strong> Mapping a metric to a single tissue (e.g., patellar tendon vs. calf vs. adductor) or suggesting a soleplate (<span className="font-mono">FG-S</span> vs. <span className="font-mono">SG</span>) is intended to <strong>prompt informed staff conversation</strong> alongside player comfort and medical history.
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-3 pt-2 border-t border-[#FDE68A] text-[10px] font-bold text-[#92400E]">
+                Application: Use as a contextual lens alongside medical &amp; coaching judgment
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================
           2. 4-CARD CAMP EXPOSURE & BIOMECHANICAL DIAGNOSTIC SUMMARY STRIP
           =================================================================== */}
       {windowDiagnostics && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {/* Card 1: Window Mean ± SD vs Ideal Range */}
+          {/* Card 1: Window Mean ± SD vs Suggested Target Range */}
           <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-4 flex flex-col justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] block">
@@ -921,21 +1069,21 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               <span
                 className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${
                   windowDiagnostics.outsideIdealCount > 0
-                    ? 'bg-red-50 text-[#DA291C] border-red-200'
+                    ? 'bg-amber-50 text-[#92400E] border-amber-300'
                     : 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 }`}
               >
-                {windowDiagnostics.outsideIdealCount} of {chronologicalPoints.length} Days Outside Ideal
+                {windowDiagnostics.outsideIdealCount} of {chronologicalPoints.length} Days Outside Window
               </span>
             </div>
           </div>
 
-          {/* Card 2: Steepest Day-to-Day Transition ("Transition Shock") */}
+          {/* Card 2: Steepest Day-to-Day Transition */}
           <div className="bg-white border border-[#E2E8F0] border-l-[4px] border-l-[#DA291C] rounded-[10px] p-4 flex flex-col justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#DA291C] flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                Steepest Day-to-Day Shift (Transition Shock)
+                Largest Day-to-Day Surface Shift (Δ)
               </span>
               <div className="text-sm font-black text-[#2E3440] mt-1">
                 {windowDiagnostics.prevOfMaxShift.shortDate} ({windowDiagnostics.prevOfMaxShift.venueShort}) →{' '}
@@ -955,7 +1103,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </div>
             </div>
             <div className="mt-2 pt-2 border-t border-[#E5E9F0] text-[11px] text-[#434C5E] font-medium">
-              Abrupt surface shifts reduce tendon accommodation time and spike acute soreness.
+              Steeper day-to-day transitions may reduce tissue accommodation time and warrant closer soreness monitoring.
             </div>
           </div>
 
@@ -980,29 +1128,29 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </div>
             </div>
             <div className="mt-2 pt-2 border-t border-[#E5E9F0] text-[11px] text-[#434C5E] font-medium">
-              High zone-to-zone SD forces constant neuromuscular stiffness recalibration across the pitch.
+              Higher zone-to-zone SD indicates less uniform underfoot conditions across the 18 pitch zones.
             </div>
           </div>
 
-          {/* Card 4: Active Clinical Pathology Guidance */}
+          {/* Card 4: Active Suggested Theoretical Mechanism */}
           <div className="bg-[#EFF6FF]/75 border border-[#BFDBFE] rounded-[10px] p-4 flex flex-col justify-between">
             <div>
               <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#001489] block">
-                Clinical Mechanism • {activeLensSpec.title}
+                Theoretical Mechanism • {activeLensSpec.title}
               </span>
               <p className="text-[11px] text-[#2E3440] font-semibold mt-1 leading-relaxed">
                 {activeLensSpec.mechanismSummary}
               </p>
             </div>
             <div className="mt-2 pt-2 border-t border-[#BFDBFE] text-[10px] font-bold text-[#001489]">
-              Focus: {activeLensSpec.pathologyFocus}
+              {activeLensSpec.pathologyFocus}
             </div>
           </div>
         </div>
       )}
 
       {/* ===================================================================
-          3. MAIN TIME-SERIES PROGRESSION CHART (MEAN ± 1 SD + Y-AXIS IDEAL RANGE)
+          3. MAIN TIME-SERIES PROGRESSION CHART (MEAN ± 1 SD + Y-AXIS TARGET RANGE)
           =================================================================== */}
       <div
         className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
@@ -1013,7 +1161,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-extrabold text-[#2E3440]">
-                Chronological Team Exposure — {metricCfg.label} (Mean ± 1 SD &amp; Ideal Range)
+                Chronological Team Exposure — {metricCfg.label} (Mean ± 1 SD &amp; Target Window)
               </h3>
               {onOpenAppendixA && (
                 <MetricInfoTrigger
@@ -1025,8 +1173,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             <p className="text-xs text-[#64748B] font-medium mt-0.5">
               Each point displays the <strong className="text-[#2E3440]">Session Mean</strong>, vertical{' '}
               <strong className="text-[#001489]">±1 SD error bar</strong>, shaded variance envelope, and{' '}
-              <strong className="text-emerald-700">Y-axis Ideal Range ({metricCfg.idealMin}–{metricCfg.idealMax})</strong>.
-              Click any date point to inspect its clinical impact.
+              <strong className="text-emerald-700">Suggested Target Window ({metricCfg.idealMin}–{metricCfg.idealMax})</strong>.
+              Click any date point to inspect its session details and suggested considerations.
             </p>
           </div>
 
@@ -1069,7 +1217,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
         {/* SVG Chart Container */}
         <div className="w-full overflow-x-auto bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] p-3">
           <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-auto min-w-[740px]">
-            {/* 1. Upper Overload Zone (Above Ideal Max) */}
+            {/* 1. Upper Watch Zone (Above Target Max) */}
             {idealTopY > padT && (
               <g>
                 <rect
@@ -1090,7 +1238,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </g>
             )}
 
-            {/* 2. Shaded Green Ideal / Reference Range Band on Y-Axis */}
+            {/* 2. Shaded Green Suggested Target / Reference Range Band on Y-Axis */}
             <g>
               <rect
                 x={padL}
@@ -1102,11 +1250,11 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 strokeWidth="1.2"
                 strokeDasharray="5 3"
               />
-              {/* Ideal Range Label Badge on Left Y-Axis */}
+              {/* Target Range Label Badge on Left Y-Axis */}
               <rect
                 x={padL + 8}
                 y={idealTopY + 6}
-                width={158}
+                width={168}
                 height={18}
                 rx={4}
                 fill="#ECFDF5"
@@ -1122,7 +1270,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               </text>
             </g>
 
-            {/* 3. Lower Compliant / Underload Zone (Below Ideal Min) */}
+            {/* 3. Lower Compliant / Watch Zone (Below Target Min) */}
             {idealBottomY < h - padB && (
               <g>
                 <rect
@@ -1169,7 +1317,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               );
             })}
 
-            {/* Explicitly label Ideal Min and Ideal Max on the Left Y-Axis */}
+            {/* Explicitly label Target Min and Target Max on the Left Y-Axis */}
             {[metricCfg.idealMin, metricCfg.idealMax].map((iv) => {
               const y = getY(iv);
               return (
@@ -1292,7 +1440,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     .join(' ')}
                 />
 
-                {/* Highlight Steep Transition Segments (e.g. Sep 28 -> Sep 29 St. Louis +1.91 Impact) */}
+                {/* Highlight Steep Transition Segments */}
                 {chronologicalPoints.map((pt, i) => {
                   if (i === 0 || pt.deltaFromPrev === null) return null;
                   const isSteep =
@@ -1443,19 +1591,19 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5 font-extrabold text-[#001489]">
               <span className="w-3 h-3 rounded-full bg-[#001489] inline-block" />
-              Within Ideal Range (Mean ± 1 SD)
+              Within Suggested Window (Mean ± 1 SD)
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-[#DA291C]">
               <span className="w-3 h-3 rounded-full bg-[#DA291C] inline-block" />
-              Overload / High Tendon or Slip Risk
+              Above Window / Suggested Stiffness or Slip Watch
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-amber-800">
               <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" />
-              Soft Surface or High Spatial Variance (±SD)
+              Compliant Surface or Higher Spatial Variance (±SD)
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-emerald-800">
               <span className="w-3.5 h-2.5 rounded-sm bg-emerald-500/20 border border-emerald-600 inline-block" />
-              Y-Axis Ideal Range ({metricCfg.idealMin}–{metricCfg.idealMax})
+              Suggested Target Window ({metricCfg.idealMin}–{metricCfg.idealMax})
             </span>
             <span className="flex items-center gap-1.5 font-extrabold text-purple-800">
               <span className="w-3.5 h-0.5 bg-purple-600 inline-block" />
@@ -1470,7 +1618,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
       </div>
 
       {/* ===================================================================
-          4. SELECTED SESSION CLINICAL INSPECTOR + MANAGEMENT RECOMMENDATIONS
+          4. SELECTED SESSION CLINICAL INSPECTOR + SUGGESTED CONSIDERATIONS
           =================================================================== */}
       {inspectedPoint && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1543,7 +1691,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     {inspectedPoint.hardnessMean.toFixed(1)} Gm
                   </strong>
                   <span className="text-[10px] text-[#64748B] font-sans block mt-0.5">
-                    Ideal: 68–85 Gm
+                    Target: 68–85 Gm
                   </span>
                 </div>
 
@@ -1555,7 +1703,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                     {inspectedPoint.studDepthMean.toFixed(1)} mm
                   </strong>
                   <span className="text-[10px] text-[#64748B] font-sans block mt-0.5">
-                    Ideal: 9.5–13.5 mm
+                    Target: 9.5–13.5 mm
                   </span>
                 </div>
               </div>
@@ -1589,17 +1737,22 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
             </div>
           </div>
 
-          {/* Right 5 Columns: Practitioner & Medical Action Guide for Selected Lens */}
+          {/* Right 5 Columns: Suggested Practitioner & Medical Considerations */}
           <div
             className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-[10px] p-5 flex flex-col justify-between"
             style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
           >
             <div>
               <div className="pb-3 mb-3 border-b border-[#E5E9F0]">
-                <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#001489] flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-[#C69214]" />
-                  Practitioner &amp; Medical Management Protocol
-                </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#001489] flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-[#C69214]" />
+                    Suggested Practitioner Considerations (Non-Absolute)
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#F1F5F9] text-[#434C5E] border border-[#CBD5E1]">
+                    Advisory Only
+                  </span>
+                </div>
                 <h4 className="text-base font-black text-[#2E3440] mt-0.5">
                   {activeLensSpec.title}
                 </h4>
@@ -1608,42 +1761,45 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               <div className="space-y-3 text-xs text-[#434C5E]">
                 <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[8px] p-3">
                   <strong className="text-[#2E3440] block mb-1">
-                    How Camp Conditions Evolved for This Pathology:
+                    Observed Camp Surface Progression for This Lens:
                   </strong>
                   <p className="leading-relaxed">
                     {clinicalLens === 'patellar_achilles' && (
                       <>
-                        After 4 compliant training days at NTC (Impact <strong>3.7–4.6</strong>),
-                        the squad experienced a sharp <strong>+1.91 Impact spike</strong> on Sept 29
-                        (St. Louis: <strong>6.68 ± 0.35</strong>, 98.5 Gm) followed by high-stiffness,
-                        high-variance surfaces in Arizona (<strong>6.24 ± 0.78</strong>) and
-                        Minnesota (<strong>6.67 ± 0.76</strong>). This rapid upward stiffness shift
-                        is the primary mechanical driver of patellar and Achilles tendon flare-ups.
+                        Following 4 more compliant training days at NTC (Impact{' '}
+                        <strong>3.7–4.6</strong>), the team encountered a{' '}
+                        <strong>+1.91 Impact upward shift</strong> on Sept 29 (St. Louis:{' '}
+                        <strong>6.68 ± 0.35</strong>, 98.5 Gm) followed by firmer, higher-variance
+                        surfaces in Arizona (<strong>6.24 ± 0.78</strong>) and Minnesota (
+                        <strong>6.67 ± 0.76</strong>). From a theoretical leg-stiffness perspective,
+                        this transition may help explain increased patellar or Achilles tendon
+                        soreness reports in predisposed players.
                       </>
                     )}
                     {clinicalLens === 'muscular_fatigue' && (
                       <>
-                        Soft, energy-absorbing exposures occurred on <strong>Sept 23 at NTC</strong>{' '}
-                        (Impact dipped to <strong>3.06 ± 0.99</strong> on Field 3) and{' '}
+                        More compliant, energy-absorbing exposures occurred on{' '}
+                        <strong>Sept 23 at NTC</strong> (Impact dipped to{' '}
+                        <strong>3.06 ± 0.99</strong> on Field 3) and{' '}
                         <strong>Sept 25 Orlando MD-1</strong> (<strong>3.75 ± 0.87</strong> with 2.0
-                        soft spots), elevating eccentric calf/hamstring demand immediately prior to
-                        firmer match days.
+                        soft spots), which can moderately increase ground contact time and calf/hamstring
+                        muscular work relative to firmer sessions.
                       </>
                     )}
                     {clinicalLens === 'joint_torque' && (
                       <>
-                        While mean camp Grip remained inside the 5.5–7.2 ideal band after Sept 2,
-                        localized central-pitch hotspots reached <strong>8.1 in Orlando</strong> and{' '}
-                        <strong>8.4 in St. Louis (73.1 Nm peak torque)</strong>, creating localized
-                        forefoot fixation hazards.
+                        While mean camp Grip stayed within the 5.5–7.2 target window after Sept 2,
+                        localized central-pitch zones reached <strong>8.1 in Orlando</strong> and{' '}
+                        <strong>8.4 in St. Louis (73.1 Nm peak torque)</strong>, representing areas
+                        of higher cleat-surface rotational resistance.
                       </>
                     )}
                     {clinicalLens === 'groin_adductor' && (
                       <>
-                        Stud Penetration Depth dropped below the 9.5 mm ideal threshold in{' '}
-                        <strong>St. Louis (9.1 mm)</strong> and <strong>Arizona (8.6 mm)</strong> due
-                        to compact stadium rootzones, requiring shorter conical FG-S studs to prevent
-                        lateral slipping and adductor overload.
+                        Stud Penetration Depth dipped below the 9.5 mm target window in{' '}
+                        <strong>St. Louis (9.1 mm)</strong> and <strong>Arizona (8.6 mm)</strong> on
+                        compact stadium rootzones, where longer or wider studs may penetrate less
+                        completely during high-speed lateral cuts.
                       </>
                     )}
                     {clinicalLens === 'general' && activeLensSpec.managementGuidance}
@@ -1652,7 +1808,7 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
 
                 <div className="bg-[#FEF3C7]/45 border border-[#FDE68A] rounded-[8px] p-3">
                   <strong className="text-[#92400E] block mb-1">
-                    Actionable Load &amp; Footwear Intervention:
+                    Suggested Load &amp; Footwear Considerations:
                   </strong>
                   <p className="leading-relaxed text-[#2E3440] font-medium">
                     {activeLensSpec.managementGuidance}
@@ -1678,9 +1834,9 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
               Chronological Camp Surface Exposure Log ({chronologicalPoints.length} Dates in Range)
             </h3>
             <p className="text-xs text-[#64748B] font-medium">
-              Ordered strictly by date from <strong>{startDate}</strong> to <strong>{endDate}</strong>,
-              showing <strong>Mean ± 1 SD</strong>, <strong>18-Zone Min–Max</strong>, and{' '}
-              <strong>Day-to-Day Shift (Δ)</strong>.
+              Ordered chronologically from <strong>{startDate}</strong> to <strong>{endDate}</strong>,
+              showing <strong>Mean ± 1 SD</strong>, <strong>18-Zone Min–Max</strong>,{' '}
+              <strong>Day-to-Day Shift (Δ)</strong>, and <strong>Suggested Considerations</strong>.
             </p>
           </div>
         </div>
@@ -1698,8 +1854,8 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                 <th className="text-right">Impact (Mean ± SD)</th>
                 <th className="text-right">Hardness</th>
                 <th className="text-right">Stud Depth</th>
-                <th className="text-center">Cleat Rec</th>
-                <th className="text-left">Clinical Status</th>
+                <th className="text-center">Suggested Cleat</th>
+                <th className="text-left">Suggested Context</th>
                 <th className="text-right">Compare</th>
               </tr>
             </thead>
@@ -1782,10 +1938,10 @@ export const LongitudinalTimeline: React.FC<LongitudinalTimelineProps> = ({
                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${status.badgeBg}`}
                       >
                         {status.status === 'optimal'
-                          ? '✓ Ideal Range'
+                          ? '✓ Target Window'
                           : status.status === 'overload'
-                          ? '⚠ Overload / Risk'
-                          : '⚠ Variance / Soft'}
+                          ? 'Suggested Watch (High)'
+                          : 'Suggested Watch (Soft/SD)'}
                       </span>
                     </td>
                     <td
