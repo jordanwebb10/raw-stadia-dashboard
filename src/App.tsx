@@ -26,7 +26,7 @@ import { HeadToHeadVisualComparison } from './components/HeadToHeadVisualCompari
 import { LongitudinalTimeline } from './components/LongitudinalTimeline';
 import { MobileFieldsideView } from './components/MobileFieldsideView';
 import { PitchHeatmap18Zone } from './components/PitchHeatmap18Zone';
-import { RefGaugeCard } from './components/RefGaugeCard';
+import { RefGaugeCard, TriadMiniMapMode } from './components/RefGaugeCard';
 import { SurfaceSimulatorLab } from './components/SurfaceSimulatorLab';
 import { TrainingGoalRadar } from './components/TrainingGoalRadar';
 import { INITIAL_EVALUATIONS, REFERENCE_BENCHMARKS } from './data/rawStadiaData';
@@ -114,6 +114,7 @@ export function App() {
   const [isMobileViewport, setIsMobileViewport] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [venueCategoryFilter, setVenueCategoryFilter] = useState<'ALL' | 'STADIUM' | 'NTC'>('ALL');
+  const [triadMapMode, setTriadMapMode] = useState<TriadMiniMapMode>('stackAB');
 
   // Appendix A Popup Modal State
   const [appendixAOpen, setAppendixAOpen] = useState<boolean>(false);
@@ -1265,22 +1266,50 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Jordan Webb's Sept 26 Signature 3-Column REF Gauge + 18-Zone Pitch Row */}
+                  {/* Jordan Webb's Sept 26 Signature 3-Column REF Gauge + 18-Zone Pitch Row (Now comparing Pitch A + Pitch B + Purple REF) */}
                   <div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-white border border-[#E2E8F0] rounded-[10px] px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Layers className="w-4 h-4 text-[#C69214]" />
                         <h3 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
-                          Core Surface Performance Triad — 0–10 Gauges with{' '}
-                          <span className="text-purple-700">{refBaseline.pitchName}</span> REF
-                          Anchor, Magnitude Bridge &amp; 18-Zone Maps
+                          Core Surface Performance Triad — 3-Pitch Comparison:{' '}
+                          <span className="text-[#001489]">{primaryEval.pitchName}</span> vs{' '}
+                          <span className="text-[#92400E]">{compareEval.pitchName}</span> vs{' '}
+                          <span className="text-purple-700">{refBaseline.pitchName} (REF)</span>
                         </h3>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-[#64748B] font-semibold">
-                          Click any zone circle to inspect • Click <strong>ⓘ</strong> for Appendix A
-                          definitions
+
+                      {/* Synchronized 4-Mode 18-Zone Mini-Pitch Switcher */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B]">
+                          18-Zone Mini-Maps:
                         </span>
+                        <div className="inline-flex items-center bg-[#F1F5F9] p-1 rounded-[7px] border border-[#E2E8F0]">
+                          {(
+                            [
+                              { id: 'stackAB', label: 'Stack A & B Maps' },
+                              { id: 'pitchA', label: 'Pitch A Only' },
+                              { id: 'pitchB', label: 'Pitch B Only' },
+                              { id: 'deltaAB', label: 'Δ Zone Diff (A − B)' },
+                            ] as { id: TriadMiniMapMode; label: string }[]
+                          ).map((mode) => {
+                            const active = triadMapMode === mode.id;
+                            return (
+                              <button
+                                key={mode.id}
+                                type="button"
+                                onClick={() => setTriadMapMode(mode.id)}
+                                className={`px-2.5 py-1 rounded-[5px] text-[11px] font-extrabold transition-all ${
+                                  active
+                                    ? 'bg-[#001489] text-white shadow-sm'
+                                    : 'text-[#434C5E] hover:text-[#2E3440]'
+                                }`}
+                              >
+                                {mode.label}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
 
@@ -1289,10 +1318,15 @@ export function App() {
                         metric="Impact"
                         subtitle="Compaction & Force Attenuation"
                         value={primaryEval.averages.Impact}
+                        primaryLabel={primaryEval.pitchName}
+                        compareValue={compareEval.averages.Impact}
+                        compareLabel={compareEval.pitchName}
                         refValue={refBaseline.averages.Impact}
                         refLabel={refBaseline.pitchName}
                         optimalRange={[4.0, 6.0]}
                         zones={primaryEval.zones}
+                        compareZones={compareEval.zones}
+                        miniMapMode={triadMapMode}
                         selectedZone={selectedZone}
                         onOpenAppendixA={openAppendixA}
                         onSelectZone={(z) => {
@@ -1304,10 +1338,15 @@ export function App() {
                         metric="Energy"
                         subtitle="Elastic Rebound & Restitution"
                         value={primaryEval.averages.Energy}
+                        primaryLabel={primaryEval.pitchName}
+                        compareValue={compareEval.averages.Energy}
+                        compareLabel={compareEval.pitchName}
                         refValue={refBaseline.averages.Energy}
                         refLabel={refBaseline.pitchName}
                         optimalRange={[3.8, 5.5]}
                         zones={primaryEval.zones}
+                        compareZones={compareEval.zones}
+                        miniMapMode={triadMapMode}
                         selectedZone={selectedZone}
                         onOpenAppendixA={openAppendixA}
                         onSelectZone={(z) => {
@@ -1319,10 +1358,15 @@ export function App() {
                         metric="Grip"
                         subtitle="Rotational & Linear Traction"
                         value={primaryEval.averages.Grip}
+                        primaryLabel={primaryEval.pitchName}
+                        compareValue={compareEval.averages.Grip}
+                        compareLabel={compareEval.pitchName}
                         refValue={refBaseline.averages.Grip}
                         refLabel={refBaseline.pitchName}
                         optimalRange={[5.5, 7.2]}
                         zones={primaryEval.zones}
+                        compareZones={compareEval.zones}
+                        miniMapMode={triadMapMode}
                         selectedZone={selectedZone}
                         onOpenAppendixA={openAppendixA}
                         onSelectZone={(z) => {
@@ -1333,10 +1377,11 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Visual Head-to-Head Pitch A vs Pitch B Dumbbell / Bullet Comparison */}
+                  {/* Visual Head-to-Head Pitch A vs Pitch B vs REF (12-Column Radar + 2x3 Dual Bar Grid) */}
                   <HeadToHeadVisualComparison
                     primaryEval={primaryEval}
                     compareEval={compareEval}
+                    refBaseline={refBaseline}
                     onOpenSpatialMap={() => setActiveTab('spatial')}
                     onOpenAppendixA={openAppendixA}
                   />
