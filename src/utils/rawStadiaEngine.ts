@@ -12,25 +12,91 @@ import {
 
 export const CORE_INDEX_NAMES: IndexName[] = ['Impact', 'Energy', 'Grip'];
 
+export interface JoseReportScaleBandSpec {
+  metric: IndexName;
+  outerLow: [number, number];
+  marginalLow: [number, number];
+  desirableGauge: [number, number];
+  desirableZoneMap: [number, number];
+  marginalHigh: [number, number];
+  outerHigh: [number, number];
+  segmentWidthsPct: [number, number, number, number, number];
+  zoneLowAlertCutoff: number;
+  zoneHighAlertCutoff: number;
+  emailEvidenceSummary: string;
+}
+
+/**
+ * Exact 5-tier hard reference ranges extracted from José María Oliva Lozano's
+ * USMNT Field Status Reports:
+ * - Visual 0–10 gauge bars measured pixel-for-pixel from `data/reference/media_7.png`
+ *   (193 px total bar width = 19.3 px per 1.0 index unit)
+ * - Cross-referenced against Jose's 10 raw HTML email bodies (`data/raw-emails/*.html`)
+ */
+export const JOSE_REPORT_SCALE_BANDS: Record<IndexName, JoseReportScaleBandSpec> = {
+  Impact: {
+    metric: 'Impact',
+    outerLow: [0.0, 2.0],
+    marginalLow: [2.0, 3.5],
+    desirableGauge: [3.5, 6.5],
+    desirableZoneMap: [3.5, 6.5],
+    marginalHigh: [6.5, 8.0],
+    outerHigh: [8.0, 10.0],
+    segmentWidthsPct: [20, 15, 30, 15, 20],
+    zoneLowAlertCutoff: 2.0,
+    zoneHighAlertCutoff: 7.0,
+    emailEvidenceSummary:
+      'Gauge green band: 3.5–6.5. Emails flag ~2.0 & 1.8 in Orlando as localized low values, 3.6–3.7 as relatively low overall, 4.0–5.0 at NTC as appropriate, and 7.7–8.3 (AZ, MN, STL) as outside recommended ranges.',
+  },
+  Energy: {
+    metric: 'Energy',
+    outerLow: [0.0, 2.0],
+    marginalLow: [2.0, 3.5],
+    desirableGauge: [3.5, 6.5],
+    desirableZoneMap: [3.5, 6.5],
+    marginalHigh: [6.5, 8.0],
+    outerHigh: [8.0, 10.0],
+    segmentWidthsPct: [20, 15, 30, 15, 20],
+    zoneLowAlertCutoff: 3.5,
+    zoneHighAlertCutoff: 6.5,
+    emailEvidenceSummary:
+      'Gauge green band: 3.5–6.5. Emails report 3.9–4.3 across all 10 camp sessions as consistent and within the green desirable band.',
+  },
+  Grip: {
+    metric: 'Grip',
+    outerLow: [0.0, 3.0],
+    marginalLow: [3.0, 4.5],
+    desirableGauge: [4.5, 8.5],
+    desirableZoneMap: [4.5, 7.9],
+    marginalHigh: [8.5, 9.0],
+    outerHigh: [9.0, 10.0],
+    segmentWidthsPct: [30, 15, 40, 5, 10],
+    zoneLowAlertCutoff: 4.5,
+    zoneHighAlertCutoff: 8.0,
+    emailEvidenceSummary:
+      'Gauge green band: 4.5–8.5 (30%/15%/40%/5%/10% bar split). On the 18-zone pitch map, zones ≥ 8.0 turn Red (#C62828) (e.g., 8.1 in Orlando, 8.0 in Super 4, 8.2 in Super 5 flagged in Jose’s emails).',
+  },
+};
+
 export const REFERENCE_MODE_OPTIONS: {
   id: ReferenceModeId;
   label: string;
   shortLabel: string;
 }[] = [
   {
+    id: 'raw-stadia-scale',
+    label: "Jose's Report Hard Reference Ranges (0–10 Gauge Bands)",
+    shortLabel: 'Jose Report Bands (3.5–6.5 / 4.5–8.0)',
+  },
+  {
     id: 'ntc-baseline',
-    label: 'NTC Training Baseline (Mean ± 1 SD)',
+    label: 'NTC Training Baseline (Empirical Mean ± 1 SD)',
     shortLabel: 'NTC Baseline (±1 SD)',
   },
   {
     id: 'all-camp',
-    label: 'Full Camp Distribution (Mean ± 1 SD)',
+    label: 'Full Camp Distribution (Empirical Mean ± 1 SD)',
     shortLabel: 'All-Camp (±1 SD)',
-  },
-  {
-    id: 'raw-stadia-scale',
-    label: 'Raw Stadia 0–10 Visual Scale Band',
-    shortLabel: '0–10 Visual Band',
   },
 ];
 
@@ -110,7 +176,7 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
   const meanSd = (stdDevs.Impact + stdDevs.Energy + stdDevs.Grip) / 3;
   const uniformityScore = Math.max(55, Math.min(99, Math.round(100 - meanSd * 22)));
 
-  // Detect localized zone outliers across Impact, Energy, Grip
+  // Detect localized zone outliers using Jose's report thresholds across Impact, Energy, Grip
   const hotspots: PitchHotspot[] = [];
   for (const z of zones) {
     if (z.metrics.Grip >= 8.0) {
@@ -121,9 +187,9 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
         metric: 'Grip',
         value: z.metrics.Grip,
         severity: 'critical',
-        reason: `High Traction Field zone (Grip ${z.metrics.Grip.toFixed(1)} ≥ 8.0) • Suggested Watch: Ankle | Knee`,
+        reason: `High Traction Field zone (Grip ${z.metrics.Grip.toFixed(1)} ≥ 8.0 report cutoff) • Suggested Watch: Ankle | Knee`,
       });
-    } else if (z.metrics.Grip <= 4.3) {
+    } else if (z.metrics.Grip < 4.5) {
       hotspots.push({
         zone: z.zone,
         posX: z.posX,
@@ -131,11 +197,11 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
         metric: 'Grip',
         value: z.metrics.Grip,
         severity: 'caution',
-        reason: `Low Traction Field zone (Grip ${z.metrics.Grip.toFixed(1)}) • Suggested Watch: Groin | Slipping`,
+        reason: `Low Traction Field zone (Grip ${z.metrics.Grip.toFixed(1)} < 4.5 report band) • Suggested Watch: Groin | Slipping`,
       });
     }
 
-    if (z.metrics.Impact >= 7.1) {
+    if (z.metrics.Impact >= 7.0) {
       hotspots.push({
         zone: z.zone,
         posX: z.posX,
@@ -143,7 +209,7 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
         metric: 'Impact',
         value: z.metrics.Impact,
         severity: 'critical',
-        reason: `Hard Field zone (Impact ${z.metrics.Impact.toFixed(1)} ≥ 7.1) • Suggested Watch: Tendons | Joints`,
+        reason: `Hard Field zone (Impact ${z.metrics.Impact.toFixed(1)} outside 3.5–6.5 report band) • Suggested Watch: Tendons | Joints`,
       });
     } else if (z.metrics.Impact <= 2.3) {
       hotspots.push({
@@ -153,11 +219,11 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
         metric: 'Impact',
         value: z.metrics.Impact,
         severity: 'critical',
-        reason: `Soft Field zone (Impact ${z.metrics.Impact.toFixed(1)} ≤ 2.3) • Suggested Watch: Muscles | Ligaments`,
+        reason: `Soft Field zone (Impact ${z.metrics.Impact.toFixed(1)} near ≤ 2.0 report outer band) • Suggested Watch: Muscles | Ligaments`,
       });
     }
 
-    if (z.metrics.Energy <= 3.3) {
+    if (z.metrics.Energy < 3.5) {
       hotspots.push({
         zone: z.zone,
         posX: z.posX,
@@ -165,7 +231,7 @@ export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
         metric: 'Energy',
         value: z.metrics.Energy,
         severity: 'caution',
-        reason: `Dissipating Field zone (Energy ${z.metrics.Energy.toFixed(1)}) • Suggested Watch: Calves | Cramps`,
+        reason: `Dissipating Field zone (Energy ${z.metrics.Energy.toFixed(1)} < 3.5 report band) • Suggested Watch: Calves | Cramps`,
       });
     }
   }
@@ -281,29 +347,30 @@ export function buildReferenceBaselineProfile(
   if (modeId === 'raw-stadia-scale') {
     return {
       id: 'raw-stadia-scale',
-      label: 'Raw Stadia 0–10 Visual Scale Band',
-      shortLabel: '0–10 Visual Band',
+      label: "Jose's Report Hard Reference Ranges (0–10 Gauge Bands)",
+      shortLabel: 'Jose Report Bands',
       description:
-        'Uses the 5-segment 0–10 visual gauge bands from the Raw Stadia Field Status Report (green center band: 3.5–6.5 for Impact/Energy, 4.5–8.0 for Grip).',
-      formulaNote: 'REF = Scale Center | Green Band = Report Visual Desirable Window',
+        "Extracted from José María Oliva Lozano's USMNT Field Status Report gauges (media_7.png) and 10 HTML emails: Impact 3.5–6.5, Energy 3.5–6.5, and Grip 4.5–8.0 (gauge green 4.5–8.5, with zones ≥ 8.0 flagged red).",
+      formulaNote:
+        'Impact & Energy: 0–2.0 | 2.0–3.5 | 3.5–6.5 (Green) | 6.5–8.0 | 8.0–10.0 • Grip: 0–3.0 | 3.0–4.5 | 4.5–8.0 (Green, ≥8.0 Red Alert)',
       metrics: {
         Impact: {
           mean: 5.0,
           sd: 1.5,
           bandMin: 3.5,
           bandMax: 6.5,
-          bandLow: 3.5,
-          bandHigh: 6.5,
+          bandLow: 2.0,
+          bandHigh: 8.0,
           min: 0,
           max: 10,
         },
         Energy: {
-          mean: 4.8,
+          mean: 5.0,
           sd: 1.5,
           bandMin: 3.5,
           bandMax: 6.5,
-          bandLow: 3.5,
-          bandHigh: 6.5,
+          bandLow: 2.0,
+          bandHigh: 8.0,
           min: 0,
           max: 10,
         },
@@ -312,8 +379,8 @@ export function buildReferenceBaselineProfile(
           sd: 1.75,
           bandMin: 4.5,
           bandMax: 8.0,
-          bandLow: 4.5,
-          bandHigh: 8.0,
+          bandLow: 3.0,
+          bandHigh: 8.5,
           min: 0,
           max: 10,
         },
@@ -340,7 +407,7 @@ export function buildReferenceBaselineProfile(
 }
 
 /**
- * Evaluates a zone or pitch value against the active Reference Range (or Raw Stadia report thresholds)
+ * Evaluates a zone or pitch value against the active Reference Range and Jose's report cutoffs
  */
 export function getZoneStatusColor(
   metric: IndexName,
@@ -354,15 +421,15 @@ export function getZoneStatusColor(
   label: string;
 } {
   if (metric === 'Impact') {
-    const lowCut = refStats ? refStats.bandMin : 3.65;
-    const highCut = refStats ? refStats.bandMax : 5.05;
-    if (value <= 2.3) {
+    const lowCut = refStats ? refStats.bandMin : 3.5;
+    const highCut = refStats ? refStats.bandMax : 6.5;
+    if (value <= 2.0) {
       return {
         bg: 'bg-[#DA291C]',
         border: 'border-red-300',
         text: 'text-white',
         status: 'critical',
-        label: 'Soft Field (< 2.4)',
+        label: 'Soft Field (≤ 2.0)',
       };
     }
     if (value < lowCut) {
@@ -371,7 +438,7 @@ export function getZoneStatusColor(
         border: 'border-amber-300',
         text: 'text-slate-950',
         status: 'caution-low',
-        label: 'Softer than Reference Band',
+        label: 'Below Recommended Band',
       };
     }
     if (value <= highCut) {
@@ -380,7 +447,7 @@ export function getZoneStatusColor(
         border: 'border-emerald-300',
         text: 'text-white',
         status: 'optimal',
-        label: 'Within Reference Band',
+        label: 'Within Recommended Band',
       };
     }
     if (value < 7.0) {
@@ -389,7 +456,7 @@ export function getZoneStatusColor(
         border: 'border-amber-300',
         text: 'text-slate-950',
         status: 'caution-high',
-        label: 'Firmer than Reference Band',
+        label: 'Above Recommended Band',
       };
     }
     return {
@@ -402,8 +469,17 @@ export function getZoneStatusColor(
   }
 
   if (metric === 'Energy') {
-    const lowCut = refStats ? refStats.bandMin : 3.6;
-    const highCut = refStats ? refStats.bandMax : 4.4;
+    const lowCut = refStats ? refStats.bandMin : 3.5;
+    const highCut = refStats ? refStats.bandMax : 6.5;
+    if (value < 2.0) {
+      return {
+        bg: 'bg-[#DA291C]',
+        border: 'border-red-300',
+        text: 'text-white',
+        status: 'critical',
+        label: 'Very Low Energy (< 2.0)',
+      };
+    }
     if (value < lowCut) {
       return {
         bg: 'bg-amber-500',
@@ -419,7 +495,7 @@ export function getZoneStatusColor(
         border: 'border-emerald-300',
         text: 'text-white',
         status: 'optimal',
-        label: 'Within Reference Band',
+        label: 'Within Recommended Band',
       };
     }
     return {
@@ -431,16 +507,25 @@ export function getZoneStatusColor(
     };
   }
 
-  // Grip
-  const lowCut = refStats ? refStats.bandMin : 5.35;
-  const highCut = refStats ? refStats.bandMax : 7.15;
+  // Grip: Jose's report shows 4.5-8.5 green on gauge bar, and >= 8.0 as Red (#C62828) on the 18-zone pitch map
+  const lowCut = refStats ? refStats.bandMin : 4.5;
+  const highCut = refStats ? Math.min(refStats.bandMax, 7.99) : 7.99;
   if (value >= 8.0) {
     return {
       bg: 'bg-[#DA291C]',
       border: 'border-red-300',
       text: 'text-white',
       status: 'critical',
-      label: 'High Traction Spike (≥ 8.0)',
+      label: 'High Traction Alert (≥ 8.0)',
+    };
+  }
+  if (value < 3.0) {
+    return {
+      bg: 'bg-[#DA291C]',
+      border: 'border-red-300',
+      text: 'text-white',
+      status: 'critical',
+      label: 'Very Low Grip (< 3.0)',
     };
   }
   if (value < lowCut) {
@@ -458,7 +543,7 @@ export function getZoneStatusColor(
       border: 'border-emerald-300',
       text: 'text-white',
       status: 'optimal',
-      label: 'Within Reference Band',
+      label: 'Within Recommended Band',
     };
   }
   return {

@@ -1,7 +1,11 @@
 import React from 'react';
 import { getKnowledgeSpec } from '../data/rawStadiaKnowledge';
 import { IndexName, MetricReferenceStats, PitchZone } from '../types/rawStadia';
-import { getMagnitudeAssessment, getZoneStatusColor } from '../utils/rawStadiaEngine';
+import {
+  getMagnitudeAssessment,
+  getZoneStatusColor,
+  JOSE_REPORT_SCALE_BANDS,
+} from '../utils/rawStadiaEngine';
 import { MetricInfoTrigger } from './AppendixAModal';
 
 export type TriadMiniMapMode = 'stackAB' | 'pitchA' | 'pitchB' | 'deltaAB';
@@ -42,6 +46,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
   showMiniPitch = true,
 }) => {
   const spec = getKnowledgeSpec(metric);
+  const joseBand = JOSE_REPORT_SCALE_BANDS[metric];
   const refValue = refStats.mean;
   const optimalRange: [number, number] = [refStats.bandMin, refStats.bandMax];
 
@@ -274,25 +279,45 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
           </span>
         </div>
 
-        {/* LAYER 2: 0–10 Multi-Marker Gauge Bar (Visualizing Pitch A + Pitch B + REF + Reference Band) */}
+        {/* LAYER 2: 0–10 Multi-Marker Gauge Bar (Visualizing Jose's 5-Tier Report Scale + Pitch A + Pitch B + REF) */}
         <div className="mb-5">
           <div className="flex justify-between items-center text-[10px] font-bold text-[#64748B] mb-1 font-mono">
             <span>0.0 ({spec.lowSpectrum.title})</span>
             <span className="text-emerald-700 font-sans font-extrabold">
-              Ref Band (±1 SD): {optimalRange[0].toFixed(2)}–{optimalRange[1].toFixed(2)}
+              Jose Report Green: {joseBand.desirableZoneMap[0].toFixed(1)}–{joseBand.desirableZoneMap[1].toFixed(1)} | Active Band: {optimalRange[0].toFixed(2)}–{optimalRange[1].toFixed(2)}
             </span>
             <span>10.0 ({spec.highSpectrum.title})</span>
           </div>
 
           <div className="relative h-6 rounded-[6px] bg-[#E2E8F0] overflow-visible flex items-center">
-            {/* 5-segment subtle background bands */}
-            <div className="w-[20%] h-full bg-[#F1F5F9] rounded-l-[6px] border-r border-white/60" />
-            <div className="w-[15%] h-full bg-[#E2E8F0] border-r border-white/60" />
-            <div className="w-[30%] h-full bg-emerald-500/15 border-r border-white/60" />
-            <div className="w-[15%] h-full bg-[#E2E8F0] border-r border-white/60" />
-            <div className="w-[20%] h-full bg-[#F1F5F9] rounded-r-[6px]" />
+            {/* Exact 5-segment background bands from Jose's Field Status Report (media_7.png) */}
+            <div
+              style={{ width: `${joseBand.segmentWidthsPct[0]}%` }}
+              className="h-full bg-[#E5E7EB] rounded-l-[6px] border-r border-white/70"
+              title={`Outer Low (${joseBand.outerLow[0].toFixed(1)}–${joseBand.outerLow[1].toFixed(1)})`}
+            />
+            <div
+              style={{ width: `${joseBand.segmentWidthsPct[1]}%` }}
+              className="h-full bg-[#D1D5DB] border-r border-white/70"
+              title={`Marginal Low (${joseBand.marginalLow[0].toFixed(1)}–${joseBand.marginalLow[1].toFixed(1)})`}
+            />
+            <div
+              style={{ width: `${joseBand.segmentWidthsPct[2]}%` }}
+              className="h-full bg-[#C1F7CF]/70 border-r border-white/70"
+              title={`Jose Report Green Desirable Band (${joseBand.desirableGauge[0].toFixed(1)}–${joseBand.desirableGauge[1].toFixed(1)})`}
+            />
+            <div
+              style={{ width: `${joseBand.segmentWidthsPct[3]}%` }}
+              className="h-full bg-[#D1D5DB] border-r border-white/70"
+              title={`Marginal High (${joseBand.marginalHigh[0].toFixed(1)}–${joseBand.marginalHigh[1].toFixed(1)})`}
+            />
+            <div
+              style={{ width: `${joseBand.segmentWidthsPct[4]}%` }}
+              className="h-full bg-[#E5E7EB] rounded-r-[6px]"
+              title={`Outer High (${joseBand.outerHigh[0].toFixed(1)}–${joseBand.outerHigh[1].toFixed(1)})`}
+            />
 
-            {/* Highlighted Empirical Reference Range Band (Mean ± 1 SD) */}
+            {/* Highlighted Active Reference Range Band */}
             <div
               className="absolute top-0 bottom-0 bg-emerald-500/25 border-x-2 border-emerald-600/60 pointer-events-none"
               style={{ left: `${optStartPct}%`, width: `${optWidthPct}%` }}
@@ -360,6 +385,18 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
             >
               A
             </div>
+          </div>
+
+          {/* 5-Band Tick Legend from Jose's Report */}
+          <div className="mt-4 pt-1 flex items-center justify-between text-[9px] font-mono text-[#64748B]">
+            <span>Outer: {joseBand.outerLow[0].toFixed(1)}–{joseBand.outerLow[1].toFixed(1)}</span>
+            <span>Low: {joseBand.marginalLow[0].toFixed(1)}–{joseBand.marginalLow[1].toFixed(1)}</span>
+            <span className="font-extrabold text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+              Report Target: {joseBand.desirableGauge[0].toFixed(1)}–{joseBand.desirableGauge[1].toFixed(1)}
+              {metric === 'Grip' ? ' (Map < 8.0)' : ''}
+            </span>
+            <span>High: {joseBand.marginalHigh[0].toFixed(1)}–{joseBand.marginalHigh[1].toFixed(1)}</span>
+            <span>Outer: {joseBand.outerHigh[0].toFixed(1)}–{joseBand.outerHigh[1].toFixed(1)}</span>
           </div>
         </div>
       </div>

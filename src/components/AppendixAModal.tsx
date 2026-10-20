@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BookOpen, Info, Scale, ShieldCheck, X } from 'lucide-react';
 import { getKnowledgeSpec, RAW_STADIA_KNOWLEDGE_SPECS } from '../data/rawStadiaKnowledge';
 import { IndexName, ReferenceBaselineProfile } from '../types/rawStadia';
+import { JOSE_REPORT_SCALE_BANDS } from '../utils/rawStadiaEngine';
 
 interface MetricInfoTriggerProps {
   metricKey: IndexName;
@@ -15,6 +16,7 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
   label,
 }) => {
   const spec = getKnowledgeSpec(metricKey);
+  const joseBand = JOSE_REPORT_SCALE_BANDS[metricKey];
 
   return (
     <span className="relative inline-flex items-center group">
@@ -36,7 +38,7 @@ export const MetricInfoTrigger: React.FC<MetricInfoTriggerProps> = ({
         <div className="flex items-center justify-between gap-2 mb-1">
           <span className="text-xs font-black uppercase text-[#001489]">{spec.name}</span>
           <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 whitespace-nowrap">
-            {spec.lowSpectrum.title} ↔ {spec.highSpectrum.title}
+            Report Green: {joseBand.desirableZoneMap[0].toFixed(1)}–{joseBand.desirableZoneMap[1].toFixed(1)}
           </span>
         </div>
         <div className="text-[9px] font-mono font-bold uppercase text-[#C69214] mb-1">
@@ -127,29 +129,76 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
 
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {/* 1. Reference Range Methodology Explainer */}
-          {referenceProfile && (
-            <div className="bg-[#F8FAFC] border border-[#CBD5E1] border-l-[4px] border-l-[#7C3AED] rounded-[10px] p-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#7C3AED]" />
-                  <h4 className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
-                    How Reference Ranges (REF &amp; Green Band) Are Calculated
-                  </h4>
-                </div>
+          {/* 1. Reference Range Methodology Explainer + Jose's Report Hard Reference Bands */}
+          <div className="bg-[#F8FAFC] border border-[#CBD5E1] border-l-[4px] border-l-[#7C3AED] rounded-[10px] p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#7C3AED]" />
+                <h4 className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
+                  Hard Reference Ranges (Jose&apos;s Field Status Reports) &amp; Empirical Baselines
+                </h4>
+              </div>
+              {referenceProfile && (
                 <span className="text-[10px] font-mono font-extrabold px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200">
                   Active Mode: {referenceProfile.label}
                 </span>
-              </div>
-              <p className="text-xs text-[#434C5E] leading-relaxed">
-                The Raw Stadia reference document defines the two directional poles for each index (
-                <strong>Soft vs. Hard Field</strong>, <strong>Dissipating vs. Rebounding Field</strong>,{' '}
-                <strong>Low vs. High Traction Field</strong>). Rather than guessing arbitrary cutoffs, the dashboard computes the{' '}
-                <strong className="text-purple-800">Purple REF Line (Mean)</strong> and{' '}
-                <strong className="text-emerald-800">Shaded Green Reference Range (Mean ± 1 SD)</strong>{' '}
-                directly from the empirical 18-zone measurements of the selected reference baseline:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
+              )}
+            </div>
+            <p className="text-xs text-[#434C5E] leading-relaxed">
+              Every gauge bar in the dashboard displays the exact <strong>5-band 0–10 reference scale</strong> extracted from{' '}
+              <strong>José María Oliva Lozano&apos;s USMNT Field Status Reports</strong> (measured from the report gauge bars in{' '}
+              <code>media_7.png</code> and cross-referenced against his 10 camp HTML email reports), overlaid with your active{' '}
+              <strong className="text-purple-800">Purple REF Line</strong> and{' '}
+              <strong className="text-emerald-800">Active Reference Band</strong>:
+            </p>
+
+            {/* 5-Band Hard Reference Table from Jose's Reports */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-[11px] bg-white border border-[#E2E8F0] rounded-[8px] overflow-hidden">
+                <thead>
+                  <tr className="bg-[#F1F5F9] border-b border-[#E2E8F0] text-[10px] font-extrabold uppercase text-[#434C5E]">
+                    <th className="py-2 px-3">Index</th>
+                    <th className="py-2 px-2.5">Outer Low</th>
+                    <th className="py-2 px-2.5">Marginal Low</th>
+                    <th className="py-2 px-2.5 bg-emerald-50 text-emerald-900">Report Green Band</th>
+                    <th className="py-2 px-2.5">Marginal High</th>
+                    <th className="py-2 px-2.5">Outer High</th>
+                    <th className="py-2 px-3">HTML Email &amp; Pitch Map Cutoffs</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] font-mono">
+                  {(['Impact', 'Energy', 'Grip'] as IndexName[]).map((m) => {
+                    const jb = JOSE_REPORT_SCALE_BANDS[m];
+                    return (
+                      <tr key={m}>
+                        <td className="py-2 px-3 font-sans font-black text-[#001489]">{m}</td>
+                        <td className="py-2 px-2.5 text-[#64748B]">
+                          {jb.outerLow[0].toFixed(1)}–{jb.outerLow[1].toFixed(1)} ({jb.segmentWidthsPct[0]}%)
+                        </td>
+                        <td className="py-2 px-2.5 text-[#434C5E]">
+                          {jb.marginalLow[0].toFixed(1)}–{jb.marginalLow[1].toFixed(1)} ({jb.segmentWidthsPct[1]}%)
+                        </td>
+                        <td className="py-2 px-2.5 bg-emerald-50/70 font-extrabold text-emerald-800">
+                          {jb.desirableGauge[0].toFixed(1)}–{jb.desirableGauge[1].toFixed(1)} ({jb.segmentWidthsPct[2]}%)
+                        </td>
+                        <td className="py-2 px-2.5 text-[#434C5E]">
+                          {jb.marginalHigh[0].toFixed(1)}–{jb.marginalHigh[1].toFixed(1)} ({jb.segmentWidthsPct[3]}%)
+                        </td>
+                        <td className="py-2 px-2.5 text-[#64748B]">
+                          {jb.outerHigh[0].toFixed(1)}–{jb.outerHigh[1].toFixed(1)} ({jb.segmentWidthsPct[4]}%)
+                        </td>
+                        <td className="py-2 px-3 font-sans text-[10.5px] text-[#434C5E]">
+                          {jb.emailEvidenceSummary}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {referenceProfile && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs pt-1">
                 {(['Impact', 'Energy', 'Grip'] as IndexName[]).map((m) => {
                   const st = referenceProfile.metrics[m];
                   return (
@@ -159,7 +208,7 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
                     >
                       <div>
                         <span className="font-sans text-[10px] font-extrabold uppercase text-[#001489] block">
-                          {m} Reference
+                          Active {m} Reference
                         </span>
                         <strong className="text-sm font-black text-[#2E3440]">
                           REF {st.mean.toFixed(2)} ± {st.sd.toFixed(2)} SD
@@ -172,8 +221,8 @@ export const AppendixAModal: React.FC<AppendixAModalProps> = ({
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* 2. The 3 Official Pages from "Raw Stadia | US Soccer - Indexes.pdf" */}
           <div className="space-y-5">

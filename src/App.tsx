@@ -92,10 +92,10 @@ export function App() {
     return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
-  // Default to Orlando Match Day (Sept 26) vs Minnesota Allianz Field (Oct 6), anchored to NTC Training Baseline (Mean ± 1 SD)
+  // Default to Orlando Match Day (Sept 26) vs Minnesota Allianz Field (Oct 6), anchored to Jose's Report Hard Reference Ranges
   const [primaryId, setPrimaryId] = useState<string>('orlando-interco-md-2026-09-26');
   const [compareId, setCompareId] = useState<string>('minnesota-allianz-field-md-2026-10-06');
-  const [refModeId, setRefModeId] = useState<string>('ntc-baseline');
+  const [refModeId, setRefModeId] = useState<string>('raw-stadia-scale');
 
   const [activeMetric, setActiveMetric] = useState<IndexName>('Impact');
   const [selectedZone, setSelectedZone] = useState<number | null>(8);
