@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+dist-ssr/
+*.local
+
+# Environment & Secrets (NEVER COMMIT)
+.env
+.env.*
+*.pem
+*.key
+secrets/
+
+# Raw Superhuman email dumps (contains Outlook message IDs, headers, and phone numbers)
+data/raw-emails/
+data/ingested_emails_summary.json
+data/reference/
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
