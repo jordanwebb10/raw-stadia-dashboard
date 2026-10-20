@@ -10,7 +10,6 @@ import {
   Gauge,
   Layers,
   LucideIcon,
-  Mail,
   Monitor,
   Scale,
   Shield,
@@ -37,7 +36,7 @@ import {
   parseRawStadiaCsv,
 } from './utils/rawStadiaEngine';
 
-type ActiveTab = 'comparator' | 'spatial' | 'timeline' | 'simulator' | 'emails' | 'knowledge';
+type ActiveTab = 'comparator' | 'spatial' | 'timeline' | 'simulator' | 'knowledge';
 type LayoutMode = 'auto' | 'desktop' | 'mobile';
 
 const MODULE_META: Record<
@@ -54,9 +53,9 @@ const MODULE_META: Record<
   comparator: {
     label: '1. Pitch Comparator',
     subtitle: '0–10 REF Gauges & Boot',
-    topTitle: 'Pitch Comparator & Purple REF Gauge Engine',
+    topTitle: 'Pitch Comparator & Reference Gauge Engine',
     topSubtitle:
-      'Compare match & training pitches against NTC reference baselines with standardized effect-size magnitudes',
+      'Compare match & training pitches against reference baselines with standardized effect-size magnitudes',
     badge: 'Core',
     icon: Gauge,
   },
@@ -65,44 +64,35 @@ const MODULE_META: Record<
     subtitle: 'RAA & RTT Pitch Heatmap',
     topTitle: '18-Zone Spatial Surface Intelligence Map',
     topSubtitle:
-      'Interactive 3×6 Raw Stadia snake-walk grid, localized hotspot alerts, and zone footwear diagnostics',
+      'Interactive 3×6 pitch testing grid, localized hotspot alerts, and zone footwear diagnostics',
     badge: '18 Zones',
     icon: Compass,
   },
   timeline: {
-    label: '3. Camp Session Matrix',
-    subtitle: 'Longitudinal & Tour',
-    topTitle: 'Longitudinal Camp Progression & 23-Session Matrix',
+    label: '3. Camp Progression',
+    subtitle: 'Mean ± SD & Tendon Load',
+    topTitle: 'Camp Session Progression & Clinical Load Inspector',
     topSubtitle:
-      'Daily NTC Super 3/4/5 evolution (Sept 2 → Sept 28) and Match Day Stadium Tour audit',
-    badge: '23 Evals',
+      'Field-independent chronological exposure (Mean ± 1 SD vs. Ideal Range) to evaluate player soreness and tendon loading',
+    badge: 'Clinical',
     icon: TrendingUp,
   },
   simulator: {
     label: '4. Surface Simulator',
     subtitle: 'What-If Grounds Lab',
-    topTitle: 'Interactive Surface Simulator (Formula Lab)',
+    topTitle: 'Interactive Surface Simulator (Grounds & Load Lab)',
     topSubtitle:
-      'Simulate how mowing, rolling, aeration, or watering alters the 6 Training Goal scores and boot profile',
+      'Simulate how mowing, rolling, aeration, or watering alters the 6 Training Goal scores and cleat selection',
     badge: 'Lab',
     icon: Sliders,
   },
-  emails: {
-    label: '5. Superhuman Reports',
-    subtitle: 'José Oliva HTML Archive',
-    topTitle: 'Ingested Superhuman Surface Intelligence Reports',
-    topSubtitle:
-      'Complete archive of Sept/Oct 2026 camp evaluations sent by José María Oliva Lozano & Jordan Webb',
-    badge: '11 Threads',
-    icon: Mail,
-  },
   knowledge: {
-    label: '6. Raw Stadia Encyclopedia',
-    subtitle: 'Obsidian Spec & Equations',
-    topTitle: 'Raw Stadia Encyclopedia & Mathematical Reference',
+    label: '5. Surface Science Guide',
+    subtitle: 'Index Spectrums & Specs',
+    topTitle: 'Surface Science & Biomechanical Reference',
     topSubtitle:
-      'Obsidian Vault index spectrums, RAA/RTT instrumentation, and verified closed-form equations',
-    badge: '6 Eq',
+      '0–10 surface index spectrums, RAA/RTT mechanical instrumentation, and Training Goal suitability formulas',
+    badge: 'Guide',
     icon: BookOpen,
   },
 };
@@ -703,7 +693,7 @@ export function App() {
                       color: showMobileView ? '#2E3440' : '#434C5E',
                     }}
                   >
-                    7. Mobile Fieldside
+                    6. Mobile Fieldside
                   </div>
                   <div
                     style={{
@@ -779,10 +769,10 @@ export function App() {
                 />
                 <div>
                   <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#2E3440' }}>
-                    Raw Stadia &amp; FIFA Lab
+                    Surface Performance Lab
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>
-                    3,712 Zone Rows • 10⁻⁹ Exact
+                    18-Zone RAA &amp; RTT Diagnostics
                   </div>
                 </div>
               </div>
@@ -803,7 +793,7 @@ export function App() {
           background: '#F8FAFC',
         }}
       >
-        {/* Sticky TopBar (Exact mnt-data-management TopBar.tsx) */}
+        {/* Sticky TopBar */}
         <header
           style={{
             height: '56px',
@@ -846,9 +836,9 @@ export function App() {
             </div>
           </div>
 
-          {/* Right: Status Pill, Appendix A Popup Button, CSV Upload, and View Switcher */}
+          {/* Right: Status Pill, Appendix A Popup Button, Data Import, and View Switcher */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Red Status Badge */}
+            {/* Status Badge */}
             <div
               className="hidden xl:flex"
               style={{
@@ -863,10 +853,10 @@ export function App() {
                 fontWeight: 800,
                 letterSpacing: '0.02em',
               }}
-              title="Closed-form Raw Stadia equations verified to 10^-9 precision"
+              title="18-Zone RAA & RTT Biomechanical Surface Analytics"
             >
               <ShieldCheck size={13} />
-              <span>🔒 VERIFIED RAW STADIA ENGINE (10⁻⁹)</span>
+              <span>RAA &amp; RTT BIOMECHANICAL ENGINE</span>
             </div>
 
             {/* Appendix A Popup Modal Trigger Button */}
@@ -892,7 +882,7 @@ export function App() {
               <span>Appendix A: Definitions</span>
             </button>
 
-            {/* CSV Upload Button */}
+            {/* Data Import Button */}
             <input
               ref={fileInputRef}
               type="file"
@@ -918,7 +908,7 @@ export function App() {
               }}
             >
               <Upload size={13} color="#C69214" />
-              <span className="hidden sm:inline">Ingest CSV</span>
+              <span className="hidden sm:inline">Import Data</span>
             </button>
 
             {/* Desktop Hub / Mobile Fieldside Toggle Button */}
@@ -1140,9 +1130,8 @@ export function App() {
                   When opened on a smartphone (
                   <code className="text-[#001489] font-bold">&lt; 768px</code>), the hub
                   automatically launches into this dedicated{' '}
-                  <strong className="text-[#2E3440]">Mobile Fieldside View</strong> styled in the
-                  unified <strong className="text-[#001489]">MNT Data Management</strong> visual
-                  system:
+                  <strong className="text-[#2E3440]">Mobile Fieldside View</strong> designed for
+                  rapid pitch-side and locker room decision-making:
                 </p>
                 <div className="space-y-3 text-xs text-[#434C5E]">
                   <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[8px] p-3.5">
@@ -1208,7 +1197,7 @@ export function App() {
             <>
               {activeTab === 'comparator' && (
                 <>
-                  {/* Top Context Banner for Selected Pitch (Replaces abstract Uniformity % with concrete 18-Zone Spread & Hotspot Consistency) */}
+                  {/* Top Context Banner for Selected Pitch */}
                   <div
                     className="bg-white border border-[#E2E8F0] border-l-[4px] border-l-[#C69214] rounded-[10px] p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
                     style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
@@ -1266,7 +1255,7 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Jordan Webb's Sept 26 Signature 3-Column REF Gauge + 18-Zone Pitch Row (Now comparing Pitch A + Pitch B + Purple REF) */}
+                  {/* Core Surface Performance Triad (Comparing Pitch A + Pitch B + Purple REF) */}
                   <div>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3 bg-white border border-[#E2E8F0] rounded-[10px] px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1410,6 +1399,7 @@ export function App() {
               {activeTab === 'timeline' && (
                 <LongitudinalTimeline
                   evaluations={evaluations}
+                  refBaseline={refBaseline}
                   selectedPrimaryId={primaryId}
                   selectedCompareId={compareId}
                   onSelectPrimary={(id) => {
@@ -1418,6 +1408,7 @@ export function App() {
                   onSelectCompare={(id) => {
                     setCompareId(id);
                   }}
+                  onOpenAppendixA={openAppendixA}
                 />
               )}
 
@@ -1425,9 +1416,7 @@ export function App() {
                 <SurfaceSimulatorLab primaryEval={primaryEval} refBaseline={refBaseline} />
               )}
 
-              {activeTab === 'emails' && <EmailArchiveAndKnowledge mode="emails" />}
-
-              {activeTab === 'knowledge' && <EmailArchiveAndKnowledge mode="knowledge" />}
+              {activeTab === 'knowledge' && <EmailArchiveAndKnowledge />}
             </>
           )}
         </main>

@@ -10,7 +10,6 @@ import {
   Footprints,
   Gauge,
   Layers,
-  Mail,
   RotateCcw,
   Shield,
   Sliders,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import {
   APPENDIX_A_DEFINITIONS,
-  INGESTED_EMAIL_REPORTS,
   RAW_STADIA_KNOWLEDGE_SPECS,
 } from '../data/rawStadiaKnowledge';
 import { IndexName, PitchEvaluation, TrainingGoalName } from '../types/rawStadia';
@@ -74,7 +72,6 @@ export const MobileFieldsideView: React.FC<MobileFieldsideViewProps> = ({
   const [expandedMiniMap, setExpandedMiniMap] = useState<IndexName | null>('Grip');
   const [showSnake, setShowSnake] = useState<boolean>(false);
   const [deltaMode, setDeltaMode] = useState<boolean>(false);
-  const [historyMode, setHistoryMode] = useState<'sessions' | 'emails'>('sessions');
 
   // Simulator state for mobile radar/sim tab
   const [simImpact, setSimImpact] = useState<number>(primaryEval.averages.Impact);
@@ -827,115 +824,89 @@ export const MobileFieldsideView: React.FC<MobileFieldsideViewProps> = ({
           </>
         )}
 
-        {/* TAB 4: CAMP SESSIONS & EMAIL REPORTS */}
+        {/* TAB 4: CHRONOLOGICAL CAMP SESSIONS */}
         {mobileTab === 'history' && (
           <>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setHistoryMode('sessions')}
-                className={`py-2 rounded-[8px] text-xs font-extrabold border ${
-                  historyMode === 'sessions'
-                    ? 'bg-[#001489] text-white border-[#C69214]'
-                    : 'bg-white text-[#434C5E] border-[#CBD5E1]'
-                }`}
-              >
-                23 Pitch Evaluations
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryMode('emails')}
-                className={`py-2 rounded-[8px] text-xs font-extrabold border ${
-                  historyMode === 'emails'
-                    ? 'bg-[#001489] text-white border-[#C69214]'
-                    : 'bg-white text-[#434C5E] border-[#CBD5E1]'
-                }`}
-              >
-                11 Superhuman Reports
-              </button>
+            <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-3">
+              <div className="text-xs font-extrabold text-[#2E3440]">
+                Chronological Camp Progression ({evaluations.length} Evaluations)
+              </div>
+              <p className="text-[11px] text-[#64748B] font-medium mt-0.5">
+                Tap any session to load its 18-zone diagnostics and cleat callout.
+              </p>
             </div>
 
-            {historyMode === 'sessions' ? (
-              <div className="space-y-2.5">
-                {evaluations.map((ev) => {
-                  const isAct = ev.id === primaryId;
-                  const br = getBootRecommendation(
-                    ev.averages.Boot,
-                    ev.hardwareMetrics.studDepthMm,
-                    ev.averages.Grip
-                  );
-                  return (
-                    <button
-                      key={ev.id}
-                      type="button"
-                      onClick={() => {
-                        onSelectPrimary(ev.id);
-                        setMobileTab('briefing');
-                      }}
-                      className={`w-full text-left p-3.5 rounded-[10px] border transition-all ${
-                        isAct
-                          ? 'bg-[#EFF6FF] border-[1.5px] border-[#001489] border-l-[4px] border-l-[#C69214]'
-                          : 'bg-white border-[#E2E8F0]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-mono text-[#001489] font-extrabold">
-                          {ev.date} • {ev.sessionObjective}
-                        </span>
-                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${br.badgeBg}`}>
-                          {br.code}
-                        </span>
-                      </div>
-                      <div className="text-sm font-black text-[#2E3440]">{ev.pitchName}</div>
-                      <div className="grid grid-cols-4 gap-1.5 mt-2 pt-2 border-t border-[#E5E9F0] font-mono text-[11px]">
-                        <div>
-                          <span className="text-[9px] text-[#64748B] font-sans font-bold block">Impact</span>
-                          <strong className="text-[#2E3440]">{ev.averages.Impact.toFixed(1)}</strong>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-[#64748B] font-sans font-bold block">Energy</span>
-                          <strong className="text-emerald-700">{ev.averages.Energy.toFixed(1)}</strong>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-[#64748B] font-sans font-bold block">Grip</span>
-                          <strong className="text-purple-700">{ev.averages.Grip.toFixed(1)}</strong>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-[#64748B] font-sans font-bold block">Hardness</span>
-                          <strong className="text-[#92400E]">{ev.hardwareMetrics.hardnessGm}g</strong>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {INGESTED_EMAIL_REPORTS.map((em) => (
-                  <div
-                    key={em.id}
-                    className="bg-white border border-[#E2E8F0] rounded-[10px] p-3.5 space-y-2"
-                    style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+            <div className="space-y-2.5">
+              {evaluations.map((ev) => {
+                const isAct = ev.id === primaryId;
+                const br = getBootRecommendation(
+                  ev.averages.Boot,
+                  ev.hardwareMetrics.studDepthMm,
+                  ev.averages.Grip
+                );
+                return (
+                  <button
+                    key={ev.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectPrimary(ev.id);
+                      setMobileTab('briefing');
+                    }}
+                    className={`w-full text-left p-3.5 rounded-[10px] border transition-all ${
+                      isAct
+                        ? 'bg-[#EFF6FF] border-[1.5px] border-[#001489] border-l-[4px] border-l-[#C69214]'
+                        : 'bg-white border-[#E2E8F0]'
+                    }`}
                   >
-                    <div className="flex items-center justify-between text-[10px] font-mono">
-                      <span className="text-[#001489] font-extrabold">{em.date}</span>
-                      <span className="px-2 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] font-sans font-bold">
-                        {em.reportCategory}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono text-[#001489] font-extrabold">
+                        {ev.date} • {ev.sessionObjective}
+                      </span>
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${br.badgeBg}`}
+                      >
+                        {br.code}
                       </span>
                     </div>
-                    <div className="text-xs font-black text-[#2E3440]">{em.subject}</div>
-                    <div className="text-[11px] text-[#001489] bg-[#EFF6FF] border border-[#BFDBFE] rounded-[7px] p-2 font-bold">
-                      {em.recommendedPitch}
+                    <div className="text-sm font-black text-[#2E3440]">{ev.pitchName}</div>
+                    <div className="grid grid-cols-4 gap-1.5 mt-2 pt-2 border-t border-[#E5E9F0] font-mono text-[11px]">
+                      <div>
+                        <span className="text-[9px] text-[#64748B] font-sans font-bold block">
+                          Impact (±SD)
+                        </span>
+                        <strong className="text-[#2E3440]">
+                          {ev.averages.Impact.toFixed(1)}±{ev.stdDevs.Impact.toFixed(1)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-[#64748B] font-sans font-bold block">
+                          Energy
+                        </span>
+                        <strong className="text-emerald-700">
+                          {ev.averages.Energy.toFixed(1)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-[#64748B] font-sans font-bold block">
+                          Grip (±SD)
+                        </span>
+                        <strong className="text-purple-700">
+                          {ev.averages.Grip.toFixed(1)}±{ev.stdDevs.Grip.toFixed(1)}
+                        </strong>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-[#64748B] font-sans font-bold block">
+                          Hardness
+                        </span>
+                        <strong className="text-[#92400E]">
+                          {ev.hardwareMetrics.hardnessGm}g
+                        </strong>
+                      </div>
                     </div>
-                    <ul className="text-[11px] text-[#434C5E] font-medium list-disc list-inside space-y-1">
-                      {em.keyTakeaways.map((k, idx) => (
-                        <li key={idx}>{k}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
+                  </button>
+                );
+              })}
+            </div>
           </>
         )}
 
