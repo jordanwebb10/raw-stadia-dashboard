@@ -333,6 +333,256 @@ export function getZoneStatusColor(metric: IndexName, value: number): {
   };
 }
 
+export interface MagnitudeAssessment {
+  delta: number;
+  absDelta: number;
+  zScore: number;
+  absZ: number;
+  band: 'trivial' | 'small' | 'moderate' | 'large';
+  bandLabel: string;
+  directionWord: string;
+  summaryText: string;
+  clinicalNote: string;
+  badgeClass: string;
+  barColor: string;
+}
+
+const CAMP_SD_BENCHMARKS: Record<string, { sd: number; posWord: string; negWord: string; posNote: string; negNote: string }> = {
+  Impact: {
+    sd: 0.72,
+    posWord: 'Harder / Firmer',
+    negWord: 'Softer / Compliant',
+    posNote: 'Increased peak vertical ground reaction force & tendon/tibial load',
+    negNote: 'Greater shock attenuation; higher muscular & eccentric energy cost',
+  },
+  Energy: {
+    sd: 0.52,
+    posWord: 'Higher Rebound',
+    negWord: 'More Dissipating',
+    posNote: 'Faster elastic energy return; aids sprint speed & reactive plyometrics',
+    negNote: 'Surface absorbs more mechanical work; elevates metabolic fatigue',
+  },
+  Grip: {
+    sd: 0.58,
+    posWord: 'Higher Traction Bite',
+    negWord: 'Lower Traction / Slip',
+    posNote: 'Stronger rotational lock during cutting; monitor knee/ankle torque if >7.5',
+    negNote: 'Easier stud release; requires longer/conical studs if <5.2 to prevent slip',
+  },
+  Boot: {
+    sd: 0.85,
+    posWord: 'Shorter Stud Profile',
+    negWord: 'Longer Stud Profile',
+    posNote: 'Firmer surface penetration profile favors shorter molded/conical studs',
+    negNote: 'Deeper stud penetration favors Mixed SG/FG or longer conical cleats',
+  },
+  Hardness: {
+    sd: 7.5,
+    posWord: 'Firmer Surface',
+    negWord: 'Softer Surface',
+    posNote: 'Higher peak deceleration (Gm) on heel strike',
+    negNote: 'Lower peak impact deceleration (Gm); softer underfoot feel',
+  },
+  ShockAbsorption: {
+    sd: 2.8,
+    posWord: 'More Cushioned',
+    negWord: 'Less Cushioned',
+    posNote: 'Higher force reduction (%) relative to concrete',
+    negNote: 'Lower force attenuation (%); stiffer mechanical response',
+  },
+  EnergyRestitution: {
+    sd: 1.4,
+    posWord: 'More Spring / Return',
+    negWord: 'More Damping',
+    posNote: 'Greater vertical mechanical energy returned to athlete (%)',
+    negNote: 'More energy damped into turf rootzone (%)',
+  },
+  RotationalTorque: {
+    sd: 4.5,
+    posWord: 'Higher Peak Torque',
+    negWord: 'Lower Peak Torque',
+    posNote: 'Higher shear resistance (Nm) during planted foot rotation',
+    negNote: 'Lower rotational resistance (Nm); freer cleat release',
+  },
+  StudDepth: {
+    sd: 1.5,
+    posWord: 'Deeper Stud Entry',
+    negWord: 'Shallower Stud Entry',
+    posNote: 'Deeper cleat penetration (mm) into upper rootzone',
+    negNote: 'Shallower stud penetration (mm) due to firmer soil compaction',
+  },
+  Speed: {
+    sd: 0.55,
+    posWord: 'Faster Surface',
+    negWord: 'Slower Surface',
+    posNote: 'Higher top-speed & sprint acceleration suitability',
+    negNote: 'Lower sprint speed return; higher ground contact time',
+  },
+  Endurance: {
+    sd: 0.55,
+    posWord: 'Higher Endurance Fit',
+    negWord: 'Lower Endurance Fit',
+    posNote: 'Better suited for sustained aerobic & high-volume running',
+    negNote: 'Higher mechanical impact per stride over long durations',
+  },
+  Recovery: {
+    sd: 0.45,
+    posWord: 'Better Recovery Fit',
+    negWord: 'Higher Joint Stress',
+    posNote: 'Favorable rebound-to-impact ratio for MD+1 / regeneration',
+    negNote: 'Impact exceeds rebound; higher lower-limb mechanical toll',
+  },
+  Power: {
+    sd: 0.55,
+    posWord: 'Higher Power Output',
+    negWord: 'Lower Force Transfer',
+    posNote: 'Firm anchor & high traction maximize explosive force transfer',
+    negNote: 'More surface compliance during maximal acceleration/deceleration',
+  },
+  Reaction: {
+    sd: 0.50,
+    posWord: 'Quicker Agility / COD',
+    negWord: 'Slower Plant & Cut',
+    posNote: 'Responsive, high-grip surface for small-sided games & rapid COD',
+    negNote: 'Longer amortization phase during reactive directional changes',
+  },
+  Metabolic: {
+    sd: 0.50,
+    posWord: 'Higher Metabolic Demand',
+    negWord: 'More Economical',
+    posNote: 'Softer/compliant turf increases physiological heart-rate & O₂ cost',
+    negNote: 'Firmer, high-return turf improves running economy',
+  },
+};
+
+export function getMagnitudeAssessment(
+  metricKey: string,
+  value: number,
+  refValue: number,
+  unit: string = ''
+): MagnitudeAssessment {
+  const spec = CAMP_SD_BENCHMARKS[metricKey] || {
+    sd: 0.6,
+    posWord: 'Higher',
+    negWord: 'Lower',
+    posNote: 'Above reference baseline',
+    negNote: 'Below reference baseline',
+  };
+
+  const delta = Number((value - refValue).toFixed(2));
+  const absDelta = Math.abs(delta);
+  const zScore = Number((delta / spec.sd).toFixed(2));
+  const absZ = Math.abs(zScore);
+
+  let band: MagnitudeAssessment['band'] = 'trivial';
+  let bandLabel = 'Minimal Diff';
+  let badgeClass = 'bg-[#F1F5F9] border-[#CBD5E1] text-[#434C5E]';
+  let barColor = '#64748B';
+
+  if (absZ >= 1.8) {
+    band = 'large';
+    bandLabel = 'Large Shift';
+    badgeClass =
+      delta > 0
+        ? 'bg-red-50 border-red-300 text-[#DA291C]'
+        : 'bg-blue-50 border-blue-300 text-[#001489]';
+    barColor = delta > 0 ? '#DA291C' : '#001489';
+  } else if (absZ >= 1.0) {
+    band = 'moderate';
+    bandLabel = 'Moderate Shift';
+    badgeClass =
+      delta > 0
+        ? 'bg-amber-50 border-amber-300 text-[#92400E]'
+        : 'bg-teal-50 border-teal-300 text-teal-800';
+    barColor = delta > 0 ? '#C69214' : '#0D9488';
+  } else if (absZ >= 0.45) {
+    band = 'small';
+    bandLabel = 'Slight Shift';
+    badgeClass = 'bg-[#EFF6FF] border-[#BFDBFE] text-[#001489]';
+    barColor = '#001489';
+  }
+
+  const directionWord =
+    absZ < 0.45
+      ? '≈ Matches Baseline'
+      : delta > 0
+      ? spec.posWord
+      : spec.negWord;
+
+  const signStr = delta > 0 ? `+${delta}` : `${delta}`;
+  const zSignStr = zScore > 0 ? `+${zScore.toFixed(1)}σ` : `${zScore.toFixed(1)}σ`;
+  const unitSuffix = unit ? ` ${unit}` : '';
+
+  const summaryText =
+    absZ < 0.45
+      ? `≈ Matches Baseline (${signStr}${unitSuffix} | ${zSignStr})`
+      : `${bandLabel}: ${directionWord} (${signStr}${unitSuffix} | ${zSignStr})`;
+
+  const clinicalNote =
+    absZ < 0.45
+      ? 'Within normal day-to-day pitch variation (< 0.45 SD)'
+      : delta > 0
+      ? spec.posNote
+      : spec.negNote;
+
+  return {
+    delta,
+    absDelta,
+    zScore,
+    absZ,
+    band,
+    bandLabel,
+    directionWord,
+    summaryText,
+    clinicalNote,
+    badgeClass,
+    barColor,
+  };
+}
+
+export function getPitchSpreadSummary(evalObj: PitchEvaluation): {
+  meanSd: number;
+  impactRange: string;
+  gripRange: string;
+  consistencyLabel: string;
+  badgeClass: string;
+} {
+  const meanSd = Number(
+    (
+      (evalObj.stdDevs.Impact + evalObj.stdDevs.Energy + evalObj.stdDevs.Grip) /
+      3
+    ).toFixed(2)
+  );
+  const impactRange = `${evalObj.mins.Impact.toFixed(1)}–${evalObj.maxs.Impact.toFixed(1)} (±${evalObj.stdDevs.Impact.toFixed(2)})`;
+  const gripRange = `${evalObj.mins.Grip.toFixed(1)}–${evalObj.maxs.Grip.toFixed(1)} (±${evalObj.stdDevs.Grip.toFixed(2)})`;
+
+  if (meanSd <= 0.4 && evalObj.hotspots.length === 0) {
+    return {
+      meanSd,
+      impactRange,
+      gripRange,
+      consistencyLabel: `Consistent 18-Zone Profile (±${meanSd} SD • 0 Hotspots)`,
+      badgeClass: 'bg-emerald-50 border-emerald-300 text-emerald-800',
+    };
+  }
+  if (meanSd <= 0.65 && evalObj.hotspots.length <= 2) {
+    return {
+      meanSd,
+      impactRange,
+      gripRange,
+      consistencyLabel: `Moderate Zone Variation (±${meanSd} SD • ${evalObj.hotspots.length} Hotspot${evalObj.hotspots.length === 1 ? '' : 's'})`,
+      badgeClass: 'bg-amber-50 border-amber-300 text-[#92400E]',
+    };
+  }
+  return {
+    meanSd,
+    impactRange,
+    gripRange,
+    consistencyLabel: `High Zone Variability (±${meanSd} SD • ${evalObj.hotspots.length} Hotspots)`,
+    badgeClass: 'bg-red-50 border-red-300 text-[#DA291C]',
+  };
+}
+
 export function hydrateEvaluation(seed: RawPitchSeed): PitchEvaluation {
   const zones: PitchZone[] = SNAKE_ZONE_COORDS.map((coord, idx) => {
     const I = seed.impact[idx] ?? 4.5;

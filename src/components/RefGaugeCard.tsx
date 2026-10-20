@@ -1,6 +1,7 @@
 import React from 'react';
 import { IndexName, PitchZone } from '../types/rawStadia';
-import { getZoneStatusColor } from '../utils/rawStadiaEngine';
+import { getMagnitudeAssessment, getZoneStatusColor } from '../utils/rawStadiaEngine';
+import { MetricInfoTrigger } from './AppendixAModal';
 
 interface RefGaugeCardProps {
   metric: IndexName;
@@ -11,6 +12,7 @@ interface RefGaugeCardProps {
   zones: PitchZone[];
   selectedZone?: number | null;
   onSelectZone?: (zoneNum: number) => void;
+  onOpenAppendixA?: (metricKey: string) => void;
   showMiniPitch?: boolean;
   subtitle?: string;
 }
@@ -24,6 +26,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
   zones,
   selectedZone,
   onSelectZone,
+  onOpenAppendixA,
   showMiniPitch = true,
   subtitle,
 }) => {
@@ -31,7 +34,20 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
   const pctRef = Math.max(0, Math.min(100, (refValue / 10) * 100));
   const optStartPct = (optimalRange[0] / 10) * 100;
   const optWidthPct = ((optimalRange[1] - optimalRange[0]) / 10) * 100;
-  const delta = Number((value - refValue).toFixed(2));
+
+  const bridgeLeftPct = Math.min(pctValue, pctRef);
+  const bridgeWidthPct = Math.abs(pctValue - pctRef);
+
+  const mag = getMagnitudeAssessment(metric, value, refValue, 'idx');
+
+  // Compute 18-zone min, max, and SD for concrete within-pitch spread
+  const zoneVals = zones.map((z) => z.metrics[metric]);
+  const zMin = Math.min(...zoneVals);
+  const zMax = Math.max(...zoneVals);
+  const zMean = zoneVals.reduce((a, b) => a + b, 0) / (zoneVals.length || 1);
+  const zSd = Math.sqrt(
+    zoneVals.reduce((acc, v) => acc + (v - zMean) ** 2, 0) / (zoneVals.length || 1)
+  );
 
   // Organize 18 zones into 3 rows (posX = 3 top, 2 middle, 1 bottom) x 6 cols (posY = 1..6)
   const rows = [3, 2, 1].map((posX) =>
@@ -48,9 +64,14 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
       {/* Top Numeric Header */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B]">
-            {subtitle || 'Raw Stadia Index'}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B]">
+              {subtitle || 'Raw Stadia Index'}
+            </span>
+            {onOpenAppendixA && (
+              <MetricInfoTrigger metricKey={metric} onOpenModal={onOpenAppendixA} />
+            )}
+          </div>
           <span
             className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${
               badge.status === 'optimal'
@@ -64,7 +85,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
           </span>
         </div>
 
-        <div className="text-center my-2.5">
+        <div className="text-center my-2">
           <div className="text-4xl font-black tracking-tight text-[#2E3440]">
             {value.toFixed(1)}
           </div>
@@ -73,8 +94,8 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
           </div>
         </div>
 
-        {/* 0-10 Horizontal Gauge with Desirable Band & Purple REF Line */}
-        <div className="mt-3 mb-5 px-1">
+        {/* 0-10 Horizontal Gauge with Optimal Band, Visual Delta Bridge & Purple REF Line */}
+        <div className="mt-2.5 mb-4 px-1">
           <div className="flex justify-between text-[11px] font-bold text-[#64748B] mb-1">
             <span>0</span>
             <span className="text-emerald-700 font-extrabold">
@@ -83,15 +104,7 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
             <span>10</span>
           </div>
 
-          <div className="relative h-4 rounded-md bg-[#F1F5F9] border border-[#CBD5E1] overflow-visible flex items-center">
-            {/* Caution / Secondary Band */}
-            <div
-              className="absolute h-full bg-[#E2E8F0] rounded-sm"
-              style={{
-                left: `${Math.max(0, optStartPct - 12)}%`,
-                width: `${Math.min(100, optWidthPct + 24)}%`,
-              }}
-            />
+          <div className="relative h-5 rounded-md bg-[#F1F5F9] border border-[#CBD5E1] overflow-visible flex items-center">
             {/* Green Desirable Range Band */}
             <div
               className="absolute h-full bg-emerald-500/25 border-x border-emerald-500/60"
@@ -99,12 +112,39 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
                 left: `${optStartPct}%`,
                 width: `${optWidthPct}%`,
               }}
+              title={`Optimal Range: ${optimalRange[0]}–${optimalRange[1]}`}
             />
 
             {/* Navy Progress Fill Bar (Current Pitch Value) */}
             <div
-              className="relative h-2.5 bg-[#001489] border border-[#1E3A8A] rounded-r-sm z-10 transition-all duration-300"
+              className="relative h-2.5 bg-[#001489] rounded-l-sm z-10 transition-all duration-300"
               style={{ width: `${pctValue}%` }}
+            />
+
+            {/* Visual Delta Connector Bridge between Purple REF and Pitch A */}
+            {bridgeWidthPct > 1.2 && (
+              <div
+                className="absolute h-3.5 top-1/2 -translate-y-1/2 z-15 rounded-sm border border-dashed transition-all duration-300 flex items-center justify-center overflow-hidden"
+                style={{
+                  left: `${bridgeLeftPct}%`,
+                  width: `${bridgeWidthPct}%`,
+                  backgroundColor:
+                    mag.band === 'large'
+                      ? 'rgba(218, 41, 28, 0.22)'
+                      : mag.band === 'moderate'
+                      ? 'rgba(198, 146, 20, 0.28)'
+                      : 'rgba(0, 20, 137, 0.16)',
+                  borderColor: mag.barColor,
+                }}
+                title={`Magnitude Gap vs REF: ${mag.summaryText}`}
+              />
+            )}
+
+            {/* Pitch A Current Value Pin */}
+            <div
+              className="absolute w-3.5 h-3.5 rounded-full bg-[#001489] border-2 border-white shadow-md z-20 -translate-x-1/2 transition-all duration-300"
+              style={{ left: `${pctValue}%` }}
+              title={`Pitch A (${metric}): ${value.toFixed(2)}`}
             />
 
             {/* Vertical Purple REF Marker Line (Jordan's Sept 26 Design Addition 1) */}
@@ -114,27 +154,32 @@ export const RefGaugeCard: React.FC<RefGaugeCardProps> = ({
               title={`${refLabel}: ${refValue.toFixed(2)}`}
             >
               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-extrabold tracking-wider text-purple-800 whitespace-nowrap bg-purple-50 border border-purple-300 px-1 rounded">
-                REF
+                REF {refValue.toFixed(1)}
               </div>
             </div>
           </div>
 
-          {/* REF Delta Sub-bar */}
-          <div className="flex items-center justify-between text-[11px] text-[#64748B] mt-5 pt-2 border-t border-[#E2E8F0]">
-            <span className="truncate max-w-[175px] font-semibold" title={refLabel}>
-              REF ({refLabel}): <strong className="text-purple-700 font-extrabold">{refValue.toFixed(2)}</strong>
-            </span>
-            <span
-              className={`font-mono font-bold px-1.5 py-0.5 rounded text-[10px] ${
-                Math.abs(delta) < 0.15
-                  ? 'bg-[#F1F5F9] text-[#434C5E]'
-                  : delta > 0
-                  ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                  : 'bg-blue-50 text-[#001489] border border-blue-200'
-              }`}
-            >
-              {delta > 0 ? `+${delta.toFixed(2)}` : delta.toFixed(2)} vs REF
-            </span>
+          {/* Standardized Magnitude & Biomechanical Meaning Box (Replaces uncontextualized raw diff) */}
+          <div className="mt-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-2.5 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-[0.05em] text-[#64748B]">
+                Magnitude vs. REF
+              </span>
+              <span
+                className={`text-[10px] font-extrabold px-2 py-0.5 rounded border ${mag.badgeClass}`}
+              >
+                {mag.summaryText}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#434C5E] font-medium leading-snug">
+              {mag.clinicalNote}
+            </p>
+            <div className="pt-1 border-t border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono text-[#64748B]">
+              <span>18-Zone Spread:</span>
+              <strong className="text-[#2E3440]">
+                {zMin.toFixed(1)}–{zMax.toFixed(1)} (±{zSd.toFixed(2)} SD)
+              </strong>
+            </div>
           </div>
         </div>
       </div>
