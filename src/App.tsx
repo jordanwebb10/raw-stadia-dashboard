@@ -1,15 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity,
   AlertCircle,
   ArrowLeftRight,
   BookOpen,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
   Compass,
   Footprints,
   Gauge,
   Layers,
+  LucideIcon,
   Mail,
   Monitor,
+  Shield,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -30,11 +34,71 @@ import { getBootRecommendation, parseRawStadiaCsv } from './utils/rawStadiaEngin
 type ActiveTab = 'comparator' | 'spatial' | 'timeline' | 'emails' | 'knowledge';
 type LayoutMode = 'auto' | 'desktop' | 'mobile';
 
+const MODULE_META: Record<
+  ActiveTab,
+  {
+    label: string;
+    subtitle: string;
+    topTitle: string;
+    topSubtitle: string;
+    badge: string;
+    icon: LucideIcon;
+  }
+> = {
+  comparator: {
+    label: '1. Pitch Comparator',
+    subtitle: '0–10 REF Gauges & Boot',
+    topTitle: 'Pitch Comparator & Purple REF Gauge Engine',
+    topSubtitle:
+      'Compare match & training pitches against NTC reference baselines with RAA/RTT hardware telemetry',
+    badge: 'Core',
+    icon: Gauge,
+  },
+  spatial: {
+    label: '2. 18-Zone Spatial Map',
+    subtitle: 'RAA & RTT Pitch Heatmap',
+    topTitle: '18-Zone Spatial Surface Intelligence Map',
+    topSubtitle:
+      'Interactive 3×6 Raw Stadia snake-walk grid, localized hotspot alerts, and zone footwear diagnostics',
+    badge: '18 Zones',
+    icon: Compass,
+  },
+  timeline: {
+    label: '3. Camp Session Matrix',
+    subtitle: 'Longitudinal & Tour',
+    topTitle: 'Longitudinal Camp Progression & 23-Session Matrix',
+    topSubtitle:
+      'Daily NTC Super 3/4/5 evolution (Sept 2 → Sept 28) and Match Day Stadium Tour audit',
+    badge: '23 Evals',
+    icon: TrendingUp,
+  },
+  emails: {
+    label: '4. Superhuman Reports',
+    subtitle: 'José Oliva HTML Archive',
+    topTitle: 'Ingested Superhuman Surface Intelligence Reports',
+    topSubtitle:
+      'Complete archive of Sept/Oct 2026 camp evaluations sent by José María Oliva Lozano & Jordan Webb',
+    badge: '11 Threads',
+    icon: Mail,
+  },
+  knowledge: {
+    label: '5. Raw Stadia & Appendix A',
+    subtitle: 'Formulas & Obsidian Spec',
+    topTitle: 'Raw Stadia Encyclopedia & Appendix A Glossary',
+    topSubtitle:
+      'Obsidian Vault index spectrums, RAA/RTT instrumentation, and verified closed-form equations',
+    badge: '6 Eq',
+    icon: BookOpen,
+  },
+};
+
 export function App() {
   const [evaluations, setEvaluations] = useState<PitchEvaluation[]>(INITIAL_EVALUATIONS);
   const [activeTab, setActiveTab] = useState<ActiveTab>('comparator');
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('auto');
   const [isMobileViewport, setIsMobileViewport] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [venueCategoryFilter, setVenueCategoryFilter] = useState<'ALL' | 'STADIUM' | 'NTC'>('ALL');
 
   useEffect(() => {
     const checkViewport = () => {
@@ -55,6 +119,16 @@ export function App() {
   const [uploadBanner, setUploadBanner] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const filteredSidebarEvals = useMemo(() => {
+    if (venueCategoryFilter === 'STADIUM') {
+      return evaluations.filter((e) => !e.pitchName.startsWith('USSF Super'));
+    }
+    if (venueCategoryFilter === 'NTC') {
+      return evaluations.filter((e) => e.pitchName.startsWith('USSF Super'));
+    }
+    return evaluations;
+  }, [evaluations, venueCategoryFilter]);
 
   const primaryEval = useMemo(
     () => evaluations.find((e) => e.id === primaryId) || evaluations[0],
@@ -131,7 +205,7 @@ export function App() {
   // If on an actual mobile screen in Auto or Mobile mode, render native full-screen MobileFieldsideView
   if (showMobileView && isMobileViewport) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="min-h-screen bg-[#F8FAFC] text-[#2E3440]">
         <MobileFieldsideView
           evaluations={evaluations}
           referenceBenchmarks={REFERENCE_BENCHMARKS}
@@ -154,162 +228,661 @@ export function App() {
     );
   }
 
+  const currentModule = MODULE_META[activeTab];
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Top Executive Header */}
-      <header className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/90 px-4 sm:px-8 py-3.5">
-        <div className="max-w-[1600px] mx-auto flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-          {/* Brand Title + Desktop/Mobile Mode Switcher */}
-          <div className="flex flex-wrap items-center justify-between gap-3.5">
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-600 to-slate-900 border border-emerald-400/40 flex items-center justify-center shadow-lg shadow-emerald-950/50">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    USMNT Integrated Performance Support
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Raw Stadia Surface Intelligence v2.6
-                  </span>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
+      {/* ===================================================================
+          LEFT SIDEBAR NAVIGATION (Exact mnt-data-management SidebarNav.tsx)
+          =================================================================== */}
+      <aside
+        style={{
+          width: isSidebarCollapsed ? '72px' : '270px',
+          background: '#F8F9FA',
+          borderRight: '1px solid #E5E9F0',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'width 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+          flexShrink: 0,
+          zIndex: 50,
+          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.04)',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+        }}
+      >
+        {/* 1. Brand Header */}
+        <div
+          style={{
+            padding: isSidebarCollapsed ? '18px 12px' : '18px 16px',
+            borderBottom: '1px solid #E5E9F0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+            gap: '12px',
+            background: '#FFFFFF',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+            {/* USSF Crest Badge */}
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #001489 0%, #1E3A8A 100%)',
+                border: '1.5px solid #C69214',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 2px 6px rgba(0, 20, 137, 0.2)',
+              }}
+            >
+              <Shield size={19} color="#FFFFFF" />
+            </div>
+            {!isSidebarCollapsed && (
+              <div style={{ overflow: 'hidden' }}>
+                <div
+                  style={{
+                    fontSize: '0.94rem',
+                    fontWeight: 900,
+                    color: '#2E3440',
+                    letterSpacing: '-0.02em',
+                    whiteSpace: 'nowrap',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  MNT Surface Hub
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
-                  USMNT Pitch &amp; Stadium Surface Intelligence Hub
-                </h1>
+                <div
+                  style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    color: '#C69214',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap',
+                    marginTop: '2px',
+                  }}
+                >
+                  Sport Science Hub
+                </div>
               </div>
+            )}
+          </div>
+
+          {!isSidebarCollapsed && (
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(true)}
+              title="Collapse Sidebar"
+              style={{
+                background: '#F1F5F9',
+                border: '1px solid #E2E8F0',
+                color: '#64748B',
+                width: '28px',
+                height: '28px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* 2. Global Session / Pitch Context Selector (Hidden when collapsed) */}
+        {!isSidebarCollapsed && (
+          <div
+            style={{
+              padding: '12px 14px',
+              borderBottom: '1px solid #E5E9F0',
+              background: '#FFFFFF',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={12} color="#C69214" />
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  color: '#434C5E',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                Session Context
+              </span>
             </div>
 
-            {/* Desktop vs Mobile Fieldside Switcher Pill */}
-            <div className="inline-flex items-center bg-slate-900 border border-slate-800 rounded-xl p-1">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Venue Filter Dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: '#64748B',
+                    marginBottom: '2px',
+                  }}
+                >
+                  1. VENUE FILTER
+                </label>
+                <select
+                  value={venueCategoryFilter}
+                  onChange={(e) =>
+                    setVenueCategoryFilter(e.target.value as 'ALL' | 'STADIUM' | 'NTC')
+                  }
+                  style={{
+                    width: '100%',
+                    background: '#F8F9FA',
+                    border: '1px solid #CBD5E1',
+                    color: '#1E293B',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  <option value="ALL">All Camp Evaluations (23)</option>
+                  <option value="STADIUM">Match Day Stadiums (5)</option>
+                  <option value="NTC">NTC Training Fields (18)</option>
+                </select>
+              </div>
+
+              {/* Primary Pitch (A) Dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: '#64748B',
+                    marginBottom: '2px',
+                  }}
+                >
+                  2. PRIMARY PITCH (A)
+                </label>
+                <select
+                  value={primaryId}
+                  onChange={(e) => setPrimaryId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: '#F8F9FA',
+                    border: '1px solid #CBD5E1',
+                    color: '#1E293B',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {filteredSidebarEvals.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.date} • {ev.pitchName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Compare Pitch (B) Dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: '#64748B',
+                    marginBottom: '2px',
+                  }}
+                >
+                  3. COMPARE PITCH (B)
+                </label>
+                <select
+                  value={compareId}
+                  onChange={(e) => setCompareId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: '#F8F9FA',
+                    border: '1px solid #CBD5E1',
+                    color: '#1E293B',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {evaluations.map((ev) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.date} • {ev.pitchName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Purple REF Benchmark Dropdown */}
+              <div>
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    color: '#6D28D9',
+                    marginBottom: '2px',
+                  }}
+                >
+                  4. PURPLE REF ANCHOR
+                </label>
+                <select
+                  value={refId}
+                  onChange={(e) => setRefId(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: '#F8F9FA',
+                    border: '1px solid #CBD5E1',
+                    color: '#1E293B',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                >
+                  {REFERENCE_BENCHMARKS.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.pitchName}
+                    </option>
+                  ))}
+                  <option value="USE_COMPARE_PITCH">
+                    Pitch B ({compareEval.pitchName})
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 3. Navigation Items ("App Modules") */}
+        <div
+          style={{
+            flex: 1,
+            padding: '14px 10px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+            overflowY: 'auto',
+          }}
+        >
+          {!isSidebarCollapsed && (
+            <div
+              style={{
+                fontSize: '0.66rem',
+                fontWeight: 800,
+                color: '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                padding: '0 8px 6px',
+              }}
+            >
+              App Modules
+            </div>
+          )}
+
+          {(Object.keys(MODULE_META) as ActiveTab[]).map((tabKey) => {
+            const item = MODULE_META[tabKey];
+            const Icon = item.icon;
+            const isActive = activeTab === tabKey && !showMobileView;
+
+            return (
               <button
+                key={tabKey}
                 type="button"
-                onClick={() => setLayoutMode('desktop')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                  !showMobileView
-                    ? 'bg-emerald-500 text-slate-950 shadow'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={() => {
+                  setActiveTab(tabKey);
+                  if (showMobileView) setLayoutMode('desktop');
+                }}
+                title={isSidebarCollapsed ? `${item.label} — ${item.subtitle}` : undefined}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+                  gap: '10px',
+                  padding: isSidebarCollapsed ? '12px 0' : '10px 12px',
+                  borderRadius: '8px',
+                  background: isActive ? '#FFFFFF' : 'transparent',
+                  border: isActive ? '1px solid #E5E9F0' : '1px solid transparent',
+                  borderLeft: isActive ? '4px solid #C69214' : '4px solid transparent',
+                  boxShadow: isActive ? '0 2px 6px rgba(0, 0, 0, 0.04)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
               >
-                <Monitor className="w-3.5 h-3.5" />
-                Desktop Pro
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '11px',
+                    minWidth: 0,
+                  }}
+                >
+                  <div
+                    style={{
+                      color: isActive ? '#C69214' : '#64748B',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon size={18} strokeWidth={isActive ? 2.4 : 2} />
+                  </div>
+                  {!isSidebarCollapsed && (
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: '0.82rem',
+                          fontWeight: isActive ? 800 : 600,
+                          color: isActive ? '#2E3440' : '#434C5E',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.68rem',
+                          color: isActive ? '#434C5E' : '#94A3B8',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          marginTop: '1px',
+                        }}
+                      >
+                        {item.subtitle}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {!isSidebarCollapsed && (
+                  <span
+                    style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 800,
+                      padding: '2px 6px',
+                      borderRadius: '999px',
+                      background: isActive ? '#FEF3C7' : '#F1F5F9',
+                      color: isActive ? '#92400E' : '#434C5E',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => setLayoutMode('mobile')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-                  showMobileView
-                    ? 'bg-emerald-500 text-slate-950 shadow'
-                    : 'text-slate-400 hover:text-white'
-                }`}
+            );
+          })}
+
+          {/* Mobile Fieldside Module Entry in Sidebar */}
+          <button
+            type="button"
+            onClick={() => setLayoutMode(showMobileView ? 'desktop' : 'mobile')}
+            title={isSidebarCollapsed ? 'Mobile Fieldside View' : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isSidebarCollapsed ? 'center' : 'space-between',
+              gap: '10px',
+              padding: isSidebarCollapsed ? '12px 0' : '10px 12px',
+              borderRadius: '8px',
+              background: showMobileView ? '#FFFFFF' : 'transparent',
+              border: showMobileView ? '1px solid #E5E9F0' : '1px solid transparent',
+              borderLeft: showMobileView ? '4px solid #C69214' : '4px solid transparent',
+              boxShadow: showMobileView ? '0 2px 6px rgba(0, 0, 0, 0.04)' : 'none',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+              textAlign: 'left',
+              width: '100%',
+              marginTop: '4px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
+              <div
+                style={{
+                  color: showMobileView ? '#C69214' : '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
               >
-                <Smartphone className="w-3.5 h-3.5" />
-                Mobile Fieldside
-              </button>
+                <Smartphone size={18} strokeWidth={showMobileView ? 2.4 : 2} />
+              </div>
+              {!isSidebarCollapsed && (
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: showMobileView ? 800 : 600,
+                      color: showMobileView ? '#2E3440' : '#434C5E',
+                    }}
+                  >
+                    6. Mobile Fieldside
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.68rem',
+                      color: showMobileView ? '#434C5E' : '#94A3B8',
+                      marginTop: '1px',
+                    }}
+                  >
+                    Portrait 18-Zone &amp; Cleat
+                  </div>
+                </div>
+              )}
+            </div>
+            {!isSidebarCollapsed && (
+              <span
+                style={{
+                  fontSize: '0.6rem',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '999px',
+                  background: showMobileView ? '#FEF3C7' : '#F1F5F9',
+                  color: showMobileView ? '#92400E' : '#434C5E',
+                }}
+              >
+                iOS/Web
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* 4. Sidebar Footer */}
+        <div
+          style={{
+            padding: '12px 14px',
+            borderTop: '1px solid #E5E9F0',
+            background: '#FFFFFF',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+          }}
+        >
+          {isSidebarCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(false)}
+              title="Expand Sidebar"
+              style={{
+                background: '#F1F5F9',
+                border: '1px solid #E2E8F0',
+                color: '#2E3440',
+                width: '100%',
+                height: '32px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <ChevronRight size={16} />
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: '#C69214',
+                    boxShadow: '0 0 6px rgba(198, 146, 20, 0.4)',
+                  }}
+                />
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#2E3440' }}>
+                    Raw Stadia &amp; FIFA Lab
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 600 }}>
+                    3,712 Zone Rows • 10⁻⁹ Exact
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* ===================================================================
+          RIGHT MAIN CONTENT AREA (TopBar + SourceSessionBar + Active Module)
+          =================================================================== */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          background: '#F8FAFC',
+        }}
+      >
+        {/* Sticky TopBar (Exact mnt-data-management TopBar.tsx) */}
+        <header
+          style={{
+            height: '56px',
+            background: '#FFFFFF',
+            borderBottom: '1px solid #E5E9F0',
+            padding: '0 28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            position: 'sticky',
+            top: 0,
+            zIndex: 40,
+            flexShrink: 0,
+          }}
+        >
+          {/* Left: Current Module Title & Subtitle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  color: '#2E3440',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {showMobileView
+                  ? 'Mobile Fieldside Surface Intelligence'
+                  : currentModule.topTitle}
+              </h1>
+              <div
+                className="hidden sm:block"
+                style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}
+              >
+                {showMobileView
+                  ? 'Engineered for pitch-side & locker room smartphones (< 768px)'
+                  : currentModule.topSubtitle}
+              </div>
             </div>
           </div>
 
-          {/* Global Pitch A / Pitch B / REF Benchmark Selector Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-2xl p-2">
-            {/* Primary Pitch Selector */}
-            <div className="flex flex-col px-2">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                Primary Pitch (Pitch A)
-              </label>
-              <select
-                value={primaryId}
-                onChange={(e) => setPrimaryId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-2 py-0.5"
-              >
-                <optgroup label="Match Day Stadiums" className="bg-slate-900 text-white">
-                  {evaluations
-                    .filter((e) => !e.pitchName.startsWith('USSF Super'))
-                    .map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="NTC Training Fields (Super 3, 4, 5)" className="bg-slate-900 text-white">
-                  {evaluations
-                    .filter((e) => e.pitchName.startsWith('USSF Super'))
-                    .map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.date} • {e.pitchName} ({e.sessionObjective})
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                const temp = primaryId;
-                setPrimaryId(compareId);
-                setCompareId(temp);
+          {/* Right: Status Pill, Active Session Pill, CSV Upload, and View Switcher */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* Red Status Badge (Exact mnt-data-management TopBar badge) */}
+            <div
+              className="hidden xl:flex"
+              style={{
+                alignItems: 'center',
+                gap: '6px',
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#DA291C',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                letterSpacing: '0.02em',
               }}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-              title="Swap Pitch A and Pitch B"
+              title="Closed-form Raw Stadia equations verified to 10^-9 precision"
             >
-              <ArrowLeftRight className="w-4 h-4" />
-            </button>
-
-            {/* Comparison Pitch Selector */}
-            <div className="flex flex-col px-2 border-l border-slate-800">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-sky-400">
-                Compare Pitch (Pitch B)
-              </label>
-              <select
-                value={compareId}
-                onChange={(e) => setCompareId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-2 py-0.5"
-              >
-                <optgroup label="Match Day Stadiums" className="bg-slate-900 text-white">
-                  {evaluations
-                    .filter((e) => !e.pitchName.startsWith('USSF Super'))
-                    .map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="NTC Training Fields (Super 3, 4, 5)" className="bg-slate-900 text-white">
-                  {evaluations
-                    .filter((e) => e.pitchName.startsWith('USSF Super'))
-                    .map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.date} • {e.pitchName} ({e.sessionObjective})
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
+              <ShieldCheck size={13} />
+              <span>🔒 VERIFIED RAW STADIA ENGINE (10⁻⁹)</span>
             </div>
 
-            {/* Purple REF Line Anchor Selector */}
-            <div className="flex flex-col px-2 border-l border-slate-800">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-violet-400">
-                Purple REF Gauge Anchor
-              </label>
-              <select
-                value={refId}
-                onChange={(e) => setRefId(e.target.value)}
-                className="bg-transparent text-xs font-bold text-violet-200 focus:outline-none cursor-pointer pr-2 py-0.5"
+            {/* Active Pitch Context Pill */}
+            <div
+              className="hidden md:flex"
+              style={{
+                alignItems: 'center',
+                gap: '8px',
+                background: '#F8F9FA',
+                border: '1px solid #E5E9F0',
+                padding: '5px 12px',
+                borderRadius: '999px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#434C5E',
+              }}
+            >
+              <Calendar size={13} color="#C69214" />
+              <span>
+                {primaryEval.date} • <strong>{primaryEval.pitchName}</strong>
+              </span>
+              <span
+                style={{
+                  background: '#ECEFF4',
+                  color: '#2E3440',
+                  padding: '1px 6px',
+                  borderRadius: '999px',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                }}
               >
-                <optgroup label="NTC Reference Baselines" className="bg-slate-900 text-white">
-                  {REFERENCE_BENCHMARKS.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.pitchName} (Imp {r.averages.Impact.toFixed(1)} | Grip{' '}
-                      {r.averages.Grip.toFixed(1)})
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Dynamic Comparison" className="bg-slate-900 text-white">
-                  <option value="USE_COMPARE_PITCH">
-                    Anchor REF to Pitch B ({compareEval.pitchName})
-                  </option>
-                </optgroup>
-              </select>
+                18 zones
+              </span>
             </div>
 
             {/* CSV Upload Button */}
@@ -323,462 +896,625 @@ export function App() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-3 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#F8F9FA',
+                border: '1px solid #CBD5E1',
+                color: '#2E3440',
+                padding: '6px 12px',
+                borderRadius: '7px',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#C69214';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#CBD5E1';
+              }}
             >
-              <Upload className="w-3.5 h-3.5" />
-              Ingest CSV
+              <Upload size={13} color="#C69214" />
+              <span>Ingest CSV</span>
+            </button>
+
+            {/* Desktop Hub / Mobile Fieldside Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setLayoutMode(showMobileView ? 'desktop' : 'mobile')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                background: showMobileView
+                  ? '#C69214'
+                  : 'linear-gradient(135deg, #001489 0%, #1E3A8A 100%)',
+                border: '1.5px solid #C69214',
+                color: '#FFFFFF',
+                padding: '6px 13px',
+                borderRadius: '7px',
+                fontSize: '0.76rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: showMobileView
+                  ? '0 2px 6px rgba(198, 146, 20, 0.25)'
+                  : '0 2px 6px rgba(0, 20, 137, 0.2)',
+              }}
+            >
+              {showMobileView ? <Monitor size={14} /> : <Smartphone size={14} />}
+              <span>{showMobileView ? 'Desktop Hub' : 'Mobile Fieldside'}</span>
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Navigation Bar (Shown in Desktop Pro Mode) */}
-        {!showMobileView && (
-          <div className="max-w-[1600px] mx-auto mt-3 pt-2.5 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                {
-                  id: 'comparator' as ActiveTab,
-                  label: 'Pitch Comparator & REF Gauges',
-                  icon: Gauge,
-                },
-                {
-                  id: 'spatial' as ActiveTab,
-                  label: '18-Zone Spatial Heatmap',
-                  icon: Compass,
-                },
-                {
-                  id: 'timeline' as ActiveTab,
-                  label: 'Camp Timeline & 23-Session Matrix',
-                  icon: TrendingUp,
-                },
-                {
-                  id: 'emails' as ActiveTab,
-                  label: 'Ingested Camp Reports (11)',
-                  icon: Mail,
-                },
-                {
-                  id: 'knowledge' as ActiveTab,
-                  label: 'Raw Stadia Expert & Appendix A',
-                  icon: BookOpen,
-                },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isAct = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all border ${
-                      isAct
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md'
-                        : 'bg-slate-900/80 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="hidden md:flex items-center gap-3 text-xs text-slate-400 font-mono">
-              <span>23 Pitch Evaluations</span>
-              <span>•</span>
-              <span>414 Spatial Zones</span>
-              <span>•</span>
-              <span className="text-emerald-400 flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Formulas Verified (10⁻⁹)
-              </span>
+        {/* Optional Upload Feedback Banner */}
+        {uploadBanner && (
+          <div className="max-w-[1600px] w-full mx-auto px-7 mt-4">
+            <div className="bg-emerald-50 border border-emerald-300 rounded-[8px] px-4 py-2.5 flex items-center justify-between text-xs text-emerald-900 font-bold">
+              <span>{uploadBanner}</span>
+              <button
+                type="button"
+                onClick={() => setUploadBanner(null)}
+                className="text-emerald-800 font-extrabold hover:underline"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         )}
-      </header>
 
-      {/* Optional Upload Feedback Banner */}
-      {uploadBanner && (
-        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-8 mt-4">
-          <div className="bg-emerald-500/15 border border-emerald-500/40 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-emerald-200">
-            <span>{uploadBanner}</span>
-            <button
-              type="button"
-              onClick={() => setUploadBanner(null)}
-              className="text-emerald-300 font-bold hover:underline"
+        {/* Main Workspace Canvas */}
+        <main
+          style={{
+            flex: 1,
+            padding: '24px 28px',
+            maxWidth: '1600px',
+            width: '100%',
+            margin: '0 auto',
+            boxSizing: 'border-box',
+          }}
+          className="space-y-5"
+        >
+          {/* SourceSessionBar-Style Top Control Strip (Exact mnt-data-management SourceSessionBar.tsx) */}
+          {!showMobileView && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '16px',
+                flexWrap: 'wrap',
+                background: '#FFFFFF',
+                padding: '14px 18px',
+                borderRadius: '10px',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+              }}
             >
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Primary Pitch A */}
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#001489] mb-0.5">
+                    Primary Pitch (Pitch A)
+                  </label>
+                  <select
+                    value={primaryId}
+                    onChange={(e) => setPrimaryId(e.target.value)}
+                    className="bg-[#F8F9FA] border border-[#CBD5E1] rounded-[6px] px-2.5 py-1.5 text-xs font-bold text-[#1E293B] focus:outline-none focus:border-[#001489] cursor-pointer"
+                  >
+                    <optgroup label="Match Day Stadiums">
+                      {evaluations
+                        .filter((e) => !e.pitchName.startsWith('USSF Super'))
+                        .map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="NTC Training Fields (Super 3, 4, 5)">
+                      {evaluations
+                        .filter((e) => e.pitchName.startsWith('USSF Super'))
+                        .map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.date} • {e.pitchName} ({e.sessionObjective})
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
 
-      {/* Main Content Container */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-8 py-6 space-y-6">
-        {showMobileView ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-2">
-            {/* Left 5 Columns: Explanation of Mobile Fieldside Ergonomics */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
-                <Smartphone className="w-4 h-4" />
-                Mobile-First Fieldside Experience
+                {/* Swap A / B Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const temp = primaryId;
+                    setPrimaryId(compareId);
+                    setCompareId(temp);
+                  }}
+                  className="mt-4 p-2 rounded-[7px] bg-[#F8F9FA] border border-[#CBD5E1] hover:border-[#C69214] text-[#2E3440] transition-all"
+                  title="Swap Pitch A and Pitch B"
+                >
+                  <ArrowLeftRight className="w-4 h-4 text-[#C69214]" />
+                </button>
+
+                {/* Compare Pitch B */}
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#92400E] mb-0.5">
+                    Compare Pitch (Pitch B)
+                  </label>
+                  <select
+                    value={compareId}
+                    onChange={(e) => setCompareId(e.target.value)}
+                    className="bg-[#F8F9FA] border border-[#CBD5E1] rounded-[6px] px-2.5 py-1.5 text-xs font-bold text-[#1E293B] focus:outline-none focus:border-[#C69214] cursor-pointer"
+                  >
+                    <optgroup label="Match Day Stadiums">
+                      {evaluations
+                        .filter((e) => !e.pitchName.startsWith('USSF Super'))
+                        .map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.date} • {e.pitchName} (Imp {e.averages.Impact.toFixed(1)})
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="NTC Training Fields (Super 3, 4, 5)">
+                      {evaluations
+                        .filter((e) => e.pitchName.startsWith('USSF Super'))
+                        .map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.date} • {e.pitchName} ({e.sessionObjective})
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Purple REF Line Anchor */}
+                <div className="flex flex-col">
+                  <label className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-purple-700 mb-0.5">
+                    Purple REF Gauge Anchor
+                  </label>
+                  <select
+                    value={refId}
+                    onChange={(e) => setRefId(e.target.value)}
+                    className="bg-purple-50/60 border border-purple-300 rounded-[6px] px-2.5 py-1.5 text-xs font-bold text-purple-900 focus:outline-none focus:border-purple-600 cursor-pointer"
+                  >
+                    <optgroup label="NTC Reference Baselines">
+                      {REFERENCE_BENCHMARKS.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.pitchName} (Imp {r.averages.Impact.toFixed(1)} | Grip{' '}
+                          {r.averages.Grip.toFixed(1)})
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Dynamic Comparison">
+                      <option value="USE_COMPARE_PITCH">
+                        Anchor REF to Pitch B ({compareEval.pitchName})
+                      </option>
+                    </optgroup>
+                  </select>
+                </div>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                Engineered for Pitch-Side &amp; Locker Room Mobile Use
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                When opened on a smartphone (<code className="text-emerald-300">&lt; 768px</code>),
-                the hub automatically launches into this dedicated{' '}
-                <strong>Mobile Fieldside View</strong>. You can also interact with it live right
-                here on desktop:
-              </p>
-              <div className="space-y-3 text-xs text-slate-300">
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-                  <strong className="text-emerald-400 block text-sm mb-0.5">
-                    1. Portrait Goal-to-Goal 18-Zone Pitch Map
-                  </strong>
-                  Rotates the 3×6 Raw Stadia grid into a vertical Goal-to-Goal orientation (3 columns
-                  wide × 6 rows long) so every zone button is a 56px thumb target without horizontal
-                  pinch-zooming.
-                </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-                  <strong className="text-violet-300 block text-sm mb-0.5">
-                    2. Stacked 0–10 REF Gauges &amp; Instant Cleat Callout
-                  </strong>
-                  Displays the recommended boot soleplate (<code className="text-white">FG-L</code>,{' '}
-                  <code className="text-white">Mixed</code>, <code className="text-white">FG-S</code>
-                  ), Stud Depth (mm), Hardness (Gm), and purple <code className="text-violet-300">REF</code>{' '}
-                  gauges with collapsible 18-zone mini-maps.
-                </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5">
-                  <strong className="text-sky-300 block text-sm mb-0.5">
-                    3. Thumb-Zone Bottom Tab Bar
-                  </strong>
-                  One-handed navigation between <strong>Fieldside</strong>,{' '}
-                  <strong>18-Zone Map</strong>, <strong>Radar/Sim</strong>,{' '}
-                  <strong>Camp Log</strong>, and <strong>Appendix A Guide</strong>.
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setLayoutMode('desktop')}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700"
-              >
-                ← Return to Full Desktop Pro Dashboard
-              </button>
-            </div>
 
-            {/* Right 7 Columns: Live Interactive Mobile Device Frame */}
-            <div className="lg:col-span-7 flex justify-center">
-              <MobileFieldsideView
-                evaluations={evaluations}
-                referenceBenchmarks={REFERENCE_BENCHMARKS}
-                primaryEval={primaryEval}
-                compareEval={compareEval}
-                refBaseline={refBaseline}
-                primaryId={primaryId}
-                compareId={compareId}
-                refId={refId}
-                onSelectPrimary={setPrimaryId}
-                onSelectCompare={setCompareId}
-                onSelectRef={setRefId}
-                activeMetric={activeMetric}
-                onSelectMetric={setActiveMetric}
-                selectedZone={selectedZone}
-                onSelectZone={setSelectedZone}
-                isDesktopPreview={true}
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'comparator' && (
-              <>
-                {/* Top Context Banner for Selected Pitch */}
-                <div className="bg-gradient-to-r from-slate-900 via-slate-900/95 to-emerald-950/40 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                        Primary Pitch A • {primaryEval.date}
-                      </span>
-                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
-                        Session Objective: {primaryEval.sessionObjective}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400">
-                        Uniformity: {primaryEval.uniformityScore}%
-                      </span>
-                    </div>
-                    <h2 className="text-2xl font-black text-white">
-                      {primaryEval.pitchName}{' '}
-                      <span className="text-sm font-normal text-slate-400">
-                        ({primaryEval.venue})
-                      </span>
-                    </h2>
-                    <p className="text-xs text-slate-300 mt-1 max-w-4xl leading-relaxed">
-                      {primaryEval.notes}
-                    </p>
-                  </div>
-
-                  {/* Boot Recommendation Card on Top Right */}
-                  <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 min-w-[290px] flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                        <Footprints className="w-3.5 h-3.5 text-emerald-400" />
-                        Footwear Recommendation
-                      </span>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded border ${primaryBoot.badgeBg}`}
-                      >
-                        {primaryBoot.code} • {primaryEval.averages.Boot.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="text-sm font-extrabold text-white">{primaryBoot.name}</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">
-                      Stud Depth:{' '}
-                      <strong className="text-slate-200">
-                        {primaryEval.hardwareMetrics.studDepthMm} mm
-                      </strong>{' '}
-                      • Hardness:{' '}
-                      <strong className="text-amber-300">
-                        {primaryEval.hardwareMetrics.hardnessGm} Gm
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Jordan Webb's Sept 26 Signature 3-Column REF Gauge + 18-Zone Pitch Row */}
+              {/* Right Quick Footwear & Uniformity Status Pill */}
+              <div className="flex items-center gap-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] px-3.5 py-2">
+                <Footprints className="w-4 h-4 text-[#C69214] shrink-0" />
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-emerald-400" />
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-                        Core Surface Performance Triad — 0–10 Gauges with{' '}
-                        <span className="text-violet-300">{refBaseline.pitchName}</span> REF Anchor
-                        &amp; 18-Zone Maps
-                      </h3>
-                    </div>
-                    <span className="text-xs text-slate-400">
-                      Click any circle on the 18-zone maps to inspect that zone in the Spatial
-                      Explorer
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#64748B]">
+                    Active Cleat Callout ({primaryEval.pitchName})
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs font-black text-[#2E3440]">{primaryBoot.name}</span>
+                    <span
+                      className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${primaryBoot.badgeBg}`}
+                    >
+                      {primaryBoot.code} • {primaryEval.hardwareMetrics.studDepthMm}mm
                     </span>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <RefGaugeCard
-                      metric="Impact"
-                      subtitle="Compaction & Force Attenuation"
-                      value={primaryEval.averages.Impact}
-                      refValue={refBaseline.averages.Impact}
-                      refLabel={refBaseline.pitchName}
-                      optimalRange={[4.0, 6.0]}
-                      zones={primaryEval.zones}
-                      selectedZone={selectedZone}
-                      onSelectZone={(z) => {
-                        setSelectedZone(z);
-                        setActiveMetric('Impact');
-                      }}
-                    />
-                    <RefGaugeCard
-                      metric="Energy"
-                      subtitle="Elastic Rebound & Restitution"
-                      value={primaryEval.averages.Energy}
-                      refValue={refBaseline.averages.Energy}
-                      refLabel={refBaseline.pitchName}
-                      optimalRange={[3.8, 5.5]}
-                      zones={primaryEval.zones}
-                      selectedZone={selectedZone}
-                      onSelectZone={(z) => {
-                        setSelectedZone(z);
-                        setActiveMetric('Energy');
-                      }}
-                    />
-                    <RefGaugeCard
-                      metric="Grip"
-                      subtitle="Rotational & Linear Traction"
-                      value={primaryEval.averages.Grip}
-                      refValue={refBaseline.averages.Grip}
-                      refLabel={refBaseline.pitchName}
-                      optimalRange={[5.5, 7.2]}
-                      zones={primaryEval.zones}
-                      selectedZone={selectedZone}
-                      onSelectZone={(z) => {
-                        setSelectedZone(z);
-                        setActiveMetric('Grip');
-                      }}
-                    />
+          {/* ===================================================================
+              VIEW MODE: MOBILE FIELDSIDE PREVIEW OR DESKTOP MODULE
+              =================================================================== */}
+          {showMobileView ? (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center py-2">
+              {/* Left 5 Columns: Explanation of Mobile Fieldside Ergonomics */}
+              <div
+                className="lg:col-span-5 bg-white border border-[#E2E8F0] rounded-[10px] p-6 space-y-4"
+                style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+              >
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] text-xs font-extrabold">
+                  <Smartphone className="w-4 h-4 text-[#C69214]" />
+                  Mobile-First Fieldside Experience
+                </div>
+                <h2 className="text-2xl font-black text-[#2E3440] tracking-tight">
+                  Engineered for Pitch-Side &amp; Locker Room Mobile Use
+                </h2>
+                <p className="text-xs text-[#434C5E] font-medium leading-relaxed">
+                  When opened on a smartphone (<code className="text-[#001489] font-bold">&lt; 768px</code>),
+                  the hub automatically launches into this dedicated{' '}
+                  <strong className="text-[#2E3440]">Mobile Fieldside View</strong> styled in the
+                  unified <strong className="text-[#001489]">MNT Data Management</strong> visual
+                  system:
+                </p>
+                <div className="space-y-3 text-xs text-[#434C5E]">
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#001489] rounded-[8px] p-3.5">
+                    <strong className="text-[#001489] block text-sm font-extrabold mb-0.5">
+                      1. Portrait Goal-to-Goal 18-Zone Pitch Map
+                    </strong>
+                    Rotates the 3×6 Raw Stadia grid into a vertical Goal-to-Goal orientation (3 columns
+                    wide × 6 rows long) so every zone button is a 56px thumb target without horizontal
+                    pinch-zooming.
+                  </div>
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-[#C69214] rounded-[8px] p-3.5">
+                    <strong className="text-[#92400E] block text-sm font-extrabold mb-0.5">
+                      2. Stacked 0–10 REF Gauges &amp; Instant Cleat Callout
+                    </strong>
+                    Displays the recommended boot soleplate (<code className="text-[#001489] font-bold">FG-L</code>,{' '}
+                    <code className="text-[#001489] font-bold">Mixed</code>,{' '}
+                    <code className="text-[#001489] font-bold">FG-S</code>), Stud Depth (mm), Hardness
+                    (Gm), and purple <code className="text-purple-700 font-bold">REF</code> gauges with
+                    collapsible 18-zone mini-maps.
+                  </div>
+                  <div className="bg-[#F8FAFC] border border-[#E2E8F0] border-l-[4px] border-l-emerald-600 rounded-[8px] p-3.5">
+                    <strong className="text-emerald-800 block text-sm font-extrabold mb-0.5">
+                      3. Thumb-Zone Bottom Tab Bar
+                    </strong>
+                    One-handed navigation between <strong>Fieldside</strong>,{' '}
+                    <strong>18-Zone Map</strong>, <strong>Radar/Sim</strong>,{' '}
+                    <strong>Camp Log</strong>, and <strong>Appendix A Guide</strong>.
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode('desktop')}
+                  className="px-4 py-2.5 rounded-[7px] bg-[#001489] hover:bg-[#1E3A8A] text-white text-xs font-extrabold border border-[#C69214] shadow-sm"
+                >
+                  ← Return to Full Desktop Hub
+                </button>
+              </div>
 
-                {/* Side-by-Side Head-to-Head Pitch A vs Pitch B Hardware & Biomechanical Comparison */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800">
-                    <div>
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-emerald-400" />
-                        Head-to-Head Field Comparison: {primaryEval.pitchName} ({primaryEval.date})
-                        vs. {compareEval.pitchName} ({compareEval.date})
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Direct comparison across RAA &amp; RTT physical hardware measurements,
-                        spatial uniformity, and footwear requirements
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('spatial')}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 text-xs font-bold"
-                    >
-                      Open Full 18-Zone Spatial Map →
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {[
-                      {
-                        label: 'Hardness (Gm)',
-                        p: primaryEval.hardwareMetrics.hardnessGm,
-                        c: compareEval.hardwareMetrics.hardnessGm,
-                        unit: 'Gm',
-                        opt: '65–85 Gm',
-                      },
-                      {
-                        label: 'Shock Absorption',
-                        p: primaryEval.hardwareMetrics.shockAbsorptionPct,
-                        c: compareEval.hardwareMetrics.shockAbsorptionPct,
-                        unit: '%',
-                        opt: '58–68%',
-                      },
-                      {
-                        label: 'Energy Restitution',
-                        p: primaryEval.hardwareMetrics.energyRestitutionPct,
-                        c: compareEval.hardwareMetrics.energyRestitutionPct,
-                        unit: '%',
-                        opt: '16–21%',
-                      },
-                      {
-                        label: 'Rotational Torque',
-                        p: primaryEval.hardwareMetrics.rotationalResistanceNm,
-                        c: compareEval.hardwareMetrics.rotationalResistanceNm,
-                        unit: 'Nm',
-                        opt: '35–52 Nm',
-                      },
-                      {
-                        label: 'Stud Penetration',
-                        p: primaryEval.hardwareMetrics.studDepthMm,
-                        c: compareEval.hardwareMetrics.studDepthMm,
-                        unit: 'mm',
-                        opt: '9.5–13.5 mm',
-                      },
-                      {
-                        label: 'Boot Cleat Index',
-                        p: primaryEval.averages.Boot,
-                        c: compareEval.averages.Boot,
-                        unit: `/10 (${primaryBoot.code} vs ${compareBoot.code})`,
-                        opt: '2.5–5.3',
-                      },
-                    ].map((item) => {
-                      const diff = Number((item.p - item.c).toFixed(1));
-                      return (
-                        <div
-                          key={item.label}
-                          className="bg-slate-950/80 border border-slate-800 rounded-xl p-3"
-                        >
-                          <div className="text-[11px] font-bold text-slate-400">{item.label}</div>
-                          <div className="flex items-baseline justify-between mt-1.5 font-mono">
-                            <div>
-                              <span className="text-[10px] text-emerald-400 block">Pitch A</span>
-                              <strong className="text-base text-white">{item.p}</strong>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-[10px] text-sky-400 block">Pitch B</span>
-                              <strong className="text-base text-slate-300">{item.c}</strong>
-                            </div>
-                          </div>
-                          <div className="mt-2 pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[10px] font-mono">
-                            <span className="text-slate-500">Opt: {item.opt}</span>
-                            <span className={diff > 0 ? 'text-amber-300' : 'text-sky-300'}>
-                              {diff > 0 ? `+${diff}` : diff}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 6-Axis Training Goal Radar & Interactive Formula Simulator */}
-                <TrainingGoalRadar
+              {/* Right 7 Columns: Live Interactive Mobile Device Frame */}
+              <div className="lg:col-span-7 flex justify-center">
+                <MobileFieldsideView
+                  evaluations={evaluations}
+                  referenceBenchmarks={REFERENCE_BENCHMARKS}
                   primaryEval={primaryEval}
                   compareEval={compareEval}
                   refBaseline={refBaseline}
+                  primaryId={primaryId}
+                  compareId={compareId}
+                  refId={refId}
+                  onSelectPrimary={setPrimaryId}
+                  onSelectCompare={setCompareId}
+                  onSelectRef={setRefId}
+                  activeMetric={activeMetric}
+                  onSelectMetric={setActiveMetric}
+                  selectedZone={selectedZone}
+                  onSelectZone={setSelectedZone}
+                  isDesktopPreview={true}
                 />
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'comparator' && (
+                <>
+                  {/* Top Context Banner for Selected Pitch (mnt-data-management white card with gold left accent) */}
+                  <div
+                    className="bg-white border border-[#E2E8F0] border-l-[4px] border-l-[#C69214] rounded-[10px] p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+                    style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className="text-xs font-extrabold uppercase tracking-[0.06em] px-2.5 py-0.5 rounded-full bg-[#EFF6FF] text-[#001489] border border-[#BFDBFE]">
+                          Primary Pitch A • {primaryEval.date}
+                        </span>
+                        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                          Session Objective: {primaryEval.sessionObjective}
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#64748B]">
+                          Uniformity: <strong className="text-[#2E3440]">{primaryEval.uniformityScore}%</strong>
+                        </span>
+                      </div>
+                      <h2 className="text-2xl font-black text-[#2E3440]">
+                        {primaryEval.pitchName}{' '}
+                        <span className="text-sm font-semibold text-[#64748B]">
+                          ({primaryEval.venue})
+                        </span>
+                      </h2>
+                      <p className="text-xs text-[#434C5E] font-medium mt-1 max-w-4xl leading-relaxed">
+                        {primaryEval.notes}
+                      </p>
+                    </div>
 
-                {/* Quick Appendix A Reference Strip at Bottom of Comparator */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-emerald-400" />
-                      Appendix A — Surface Characteristic Quick Reference
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('knowledge')}
-                      className="text-xs font-bold text-emerald-400 hover:underline"
-                    >
-                      Open Full Raw Stadia Encyclopedia →
-                    </button>
+                    {/* Boot Recommendation Card on Top Right */}
+                    <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3.5 min-w-[300px] flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] flex items-center gap-1.5">
+                          <Footprints className="w-3.5 h-3.5 text-[#C69214]" />
+                          Footwear Recommendation
+                        </span>
+                        <span
+                          className={`text-xs font-extrabold px-2 py-0.5 rounded border ${primaryBoot.badgeBg}`}
+                        >
+                          {primaryBoot.code} • {primaryEval.averages.Boot.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-sm font-black text-[#2E3440]">{primaryBoot.name}</div>
+                      <div className="text-[11px] text-[#64748B] font-semibold mt-0.5">
+                        Stud Depth:{' '}
+                        <strong className="text-[#001489]">
+                          {primaryEval.hardwareMetrics.studDepthMm} mm
+                        </strong>{' '}
+                        • Hardness:{' '}
+                        <strong className="text-[#92400E]">
+                          {primaryEval.hardwareMetrics.hardnessGm} Gm
+                        </strong>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {APPENDIX_A_DEFINITIONS.slice(0, 6).map((def) => (
-                      <div
-                        key={def.term}
-                        className="bg-slate-950/75 border border-slate-800/90 rounded-xl p-3 text-xs"
-                      >
-                        <div className="flex items-center justify-between font-bold text-white mb-1">
-                          <span>{def.term}</span>
-                          <span className="text-[10px] font-mono text-emerald-400">
-                            Opt: {def.optimalBand}
-                          </span>
-                        </div>
-                        <p className="text-slate-400 text-[11px] leading-relaxed">
-                          {def.definition}
+
+                  {/* Jordan Webb's Sept 26 Signature 3-Column REF Gauge + 18-Zone Pitch Row */}
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-[#C69214]" />
+                        <h3 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440]">
+                          Core Surface Performance Triad — 0–10 Gauges with{' '}
+                          <span className="text-purple-700">{refBaseline.pitchName}</span> REF Anchor
+                          &amp; 18-Zone Maps
+                        </h3>
+                      </div>
+                      <span className="text-xs text-[#64748B] font-semibold">
+                        Click any circle on the 18-zone maps to inspect that zone in the Spatial
+                        Explorer
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <RefGaugeCard
+                        metric="Impact"
+                        subtitle="Compaction & Force Attenuation"
+                        value={primaryEval.averages.Impact}
+                        refValue={refBaseline.averages.Impact}
+                        refLabel={refBaseline.pitchName}
+                        optimalRange={[4.0, 6.0]}
+                        zones={primaryEval.zones}
+                        selectedZone={selectedZone}
+                        onSelectZone={(z) => {
+                          setSelectedZone(z);
+                          setActiveMetric('Impact');
+                        }}
+                      />
+                      <RefGaugeCard
+                        metric="Energy"
+                        subtitle="Elastic Rebound & Restitution"
+                        value={primaryEval.averages.Energy}
+                        refValue={refBaseline.averages.Energy}
+                        refLabel={refBaseline.pitchName}
+                        optimalRange={[3.8, 5.5]}
+                        zones={primaryEval.zones}
+                        selectedZone={selectedZone}
+                        onSelectZone={(z) => {
+                          setSelectedZone(z);
+                          setActiveMetric('Energy');
+                        }}
+                      />
+                      <RefGaugeCard
+                        metric="Grip"
+                        subtitle="Rotational & Linear Traction"
+                        value={primaryEval.averages.Grip}
+                        refValue={refBaseline.averages.Grip}
+                        refLabel={refBaseline.pitchName}
+                        optimalRange={[5.5, 7.2]}
+                        zones={primaryEval.zones}
+                        selectedZone={selectedZone}
+                        onSelectZone={(z) => {
+                          setSelectedZone(z);
+                          setActiveMetric('Grip');
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Side-by-Side Head-to-Head Pitch A vs Pitch B Hardware & Biomechanical Comparison */}
+                  <div
+                    className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
+                    style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-[#E5E9F0]">
+                      <div>
+                        <h3 className="text-lg font-extrabold text-[#2E3440] flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-[#C69214]" />
+                          Head-to-Head Field Comparison: {primaryEval.pitchName} ({primaryEval.date})
+                          vs. {compareEval.pitchName} ({compareEval.date})
+                        </h3>
+                        <p className="text-xs text-[#64748B] font-medium">
+                          Direct comparison across RAA &amp; RTT physical hardware measurements,
+                          spatial uniformity, and footwear requirements
                         </p>
                       </div>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('spatial')}
+                        className="px-3.5 py-1.5 rounded-[7px] bg-[#001489] hover:bg-[#1E3A8A] border border-[#C69214] text-white text-xs font-extrabold shadow-sm transition-all"
+                      >
+                        Open Full 18-Zone Spatial Map →
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {[
+                        {
+                          label: 'Hardness (Gm)',
+                          p: primaryEval.hardwareMetrics.hardnessGm,
+                          c: compareEval.hardwareMetrics.hardnessGm,
+                          unit: 'Gm',
+                          opt: '65–85 Gm',
+                        },
+                        {
+                          label: 'Shock Absorption',
+                          p: primaryEval.hardwareMetrics.shockAbsorptionPct,
+                          c: compareEval.hardwareMetrics.shockAbsorptionPct,
+                          unit: '%',
+                          opt: '58–68%',
+                        },
+                        {
+                          label: 'Energy Restitution',
+                          p: primaryEval.hardwareMetrics.energyRestitutionPct,
+                          c: compareEval.hardwareMetrics.energyRestitutionPct,
+                          unit: '%',
+                          opt: '16–21%',
+                        },
+                        {
+                          label: 'Rotational Torque',
+                          p: primaryEval.hardwareMetrics.rotationalResistanceNm,
+                          c: compareEval.hardwareMetrics.rotationalResistanceNm,
+                          unit: 'Nm',
+                          opt: '35–52 Nm',
+                        },
+                        {
+                          label: 'Stud Penetration',
+                          p: primaryEval.hardwareMetrics.studDepthMm,
+                          c: compareEval.hardwareMetrics.studDepthMm,
+                          unit: 'mm',
+                          opt: '9.5–13.5 mm',
+                        },
+                        {
+                          label: 'Boot Cleat Index',
+                          p: primaryEval.averages.Boot,
+                          c: compareEval.averages.Boot,
+                          unit: `/10 (${primaryBoot.code} vs ${compareBoot.code})`,
+                          opt: '2.5–5.3',
+                        },
+                      ].map((item) => {
+                        const diff = Number((item.p - item.c).toFixed(1));
+                        return (
+                          <div
+                            key={item.label}
+                            className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3"
+                          >
+                            <div className="text-[11px] font-extrabold text-[#434C5E]">
+                              {item.label}
+                            </div>
+                            <div className="flex items-baseline justify-between mt-1.5 font-mono">
+                              <div>
+                                <span className="text-[10px] text-[#001489] font-sans font-bold block">
+                                  Pitch A
+                                </span>
+                                <strong className="text-base font-black text-[#2E3440]">
+                                  {item.p}
+                                </strong>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[10px] text-[#92400E] font-sans font-bold block">
+                                  Pitch B
+                                </span>
+                                <strong className="text-base font-bold text-[#64748B]">
+                                  {item.c}
+                                </strong>
+                              </div>
+                            </div>
+                            <div className="mt-2 pt-1.5 border-t border-[#E2E8F0] flex items-center justify-between text-[10px] font-mono">
+                              <span className="text-[#64748B] font-semibold">Opt: {item.opt}</span>
+                              <span
+                                className={`font-bold ${
+                                  diff > 0 ? 'text-[#92400E]' : 'text-[#001489]'
+                                }`}
+                              >
+                                {diff > 0 ? `+${diff}` : diff}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
 
-            {activeTab === 'spatial' && (
-              <PitchHeatmap18Zone
-                evaluation={primaryEval}
-                comparisonEval={refBaseline}
-                activeMetric={activeMetric}
-                onSelectMetric={setActiveMetric}
-                selectedZone={selectedZone}
-                onSelectZone={setSelectedZone}
-              />
-            )}
+                  {/* 6-Axis Training Goal Radar & Interactive Formula Simulator */}
+                  <TrainingGoalRadar
+                    primaryEval={primaryEval}
+                    compareEval={compareEval}
+                    refBaseline={refBaseline}
+                  />
 
-            {activeTab === 'timeline' && (
-              <LongitudinalTimeline
-                evaluations={evaluations}
-                selectedPrimaryId={primaryId}
-                selectedCompareId={compareId}
-                onSelectPrimary={(id) => {
-                  setPrimaryId(id);
-                }}
-                onSelectCompare={(id) => {
-                  setCompareId(id);
-                }}
-              />
-            )}
+                  {/* Quick Appendix A Reference Strip at Bottom of Comparator */}
+                  <div
+                    className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
+                    style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440] flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-[#C69214]" />
+                        Appendix A — Surface Characteristic Quick Reference
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('knowledge')}
+                        className="text-xs font-extrabold text-[#001489] hover:underline"
+                      >
+                        Open Full Raw Stadia Encyclopedia →
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {APPENDIX_A_DEFINITIONS.slice(0, 6).map((def) => (
+                        <div
+                          key={def.term}
+                          className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3 text-xs"
+                        >
+                          <div className="flex items-center justify-between font-extrabold text-[#2E3440] mb-1">
+                            <span>{def.term}</span>
+                            <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                              Opt: {def.optimalBand}
+                            </span>
+                          </div>
+                          <p className="text-[#434C5E] text-[11px] font-medium leading-relaxed">
+                            {def.definition}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
-            {activeTab === 'emails' && <EmailArchiveAndKnowledge mode="emails" />}
+              {activeTab === 'spatial' && (
+                <PitchHeatmap18Zone
+                  evaluation={primaryEval}
+                  comparisonEval={refBaseline}
+                  activeMetric={activeMetric}
+                  onSelectMetric={setActiveMetric}
+                  selectedZone={selectedZone}
+                  onSelectZone={setSelectedZone}
+                />
+              )}
 
-            {activeTab === 'knowledge' && <EmailArchiveAndKnowledge mode="knowledge" />}
-          </>
-        )}
-      </main>
+              {activeTab === 'timeline' && (
+                <LongitudinalTimeline
+                  evaluations={evaluations}
+                  selectedPrimaryId={primaryId}
+                  selectedCompareId={compareId}
+                  onSelectPrimary={(id) => {
+                    setPrimaryId(id);
+                  }}
+                  onSelectCompare={(id) => {
+                    setCompareId(id);
+                  }}
+                />
+              )}
+
+              {activeTab === 'emails' && <EmailArchiveAndKnowledge mode="emails" />}
+
+              {activeTab === 'knowledge' && <EmailArchiveAndKnowledge mode="knowledge" />}
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

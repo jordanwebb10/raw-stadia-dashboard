@@ -2,24 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-main: #F8FAFC;
+  --bg-sidebar: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --border-subtle: #E2E8F0;
+  --border-nav: #E5E9F0;
+  --text-main: #2E3440;
+  --text-secondary: #434C5E;
+  --text-muted: #64748B;
+  --text-dim: #94A3B8;
+  --ussf-gold: #C69214;
+  --ussf-navy: #001489;
+  --ussf-red: #DA291C;
+  --ussf-green: #00D26A;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    margin: 0;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
-/* Custom subtle scrollbars */
+/* mnt-data-management CRUD Table & Card Primitives */
+.dma-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dma-subwell {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+}
+
+.session-crud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.session-crud-table th {
+  background: #F8FAFC;
+  color: #64748B;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 12px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.session-crud-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #2E3440;
+}
+
+.session-crud-table tr:hover td {
+  background: #F8FAFC;
+}
+
+/* Custom subtle scrollbars matching mnt-data-management */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.7);
+  background: #CBD5E1;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.7);
+  background: #C69214;
 }

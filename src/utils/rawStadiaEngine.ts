@@ -105,8 +105,8 @@ export function getBootRecommendation(
       code: 'SG',
       name: 'Soft Ground (SG)',
       studProfile: 'Long Metal Screw-In Conical Studs (13–15mm)',
-      colorClass: 'text-sky-400',
-      badgeBg: 'bg-sky-500/15 border-sky-500/40 text-sky-300',
+      colorClass: 'text-[#001489]',
+      badgeBg: 'bg-blue-50 border-blue-300 text-[#001489]',
       rationale:
         'Deep stud penetration and compliant upper soil profile require longer conical metal studs to maintain footing without slipping.',
     };
@@ -116,8 +116,8 @@ export function getBootRecommendation(
       code: 'MIXED',
       name: 'Mixed Soleplate (SG / FG Hybrid)',
       studProfile: 'Hybrid Metal Conical + Molded Studs (11–13mm)',
-      colorClass: 'text-emerald-400',
-      badgeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300',
+      colorClass: 'text-emerald-700',
+      badgeBg: 'bg-emerald-50 border-emerald-300 text-emerald-800',
       rationale:
         'High natural grass traction with good stud penetration (~11–12mm). Hybrid soleplate balances rotational release with secure grip.',
     };
@@ -127,8 +127,8 @@ export function getBootRecommendation(
       code: 'FG-L',
       name: 'Firm Ground Long (FG-L)',
       studProfile: 'Standard Molded Conical / Chevron Studs (10–11mm)',
-      colorClass: 'text-teal-400',
-      badgeBg: 'bg-teal-500/15 border-teal-500/40 text-teal-300',
+      colorClass: 'text-teal-700',
+      badgeBg: 'bg-teal-50 border-teal-300 text-teal-800',
       rationale:
         studDepthMm && studDepthMm < 9.5
           ? `Shallow stud penetration (${studDepthMm.toFixed(1)}mm) on firm rootzone; sharper conical FG studs aid ground entry while preventing rotational lock.`
@@ -140,8 +140,8 @@ export function getBootRecommendation(
       code: 'FG-S',
       name: 'Firm Ground Short / Conical (FG-S)',
       studProfile: 'Short Conical Molded Studs (8–9.5mm)',
-      colorClass: 'text-amber-400',
-      badgeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300',
+      colorClass: 'text-amber-700',
+      badgeBg: 'bg-amber-50 border-amber-300 text-amber-900',
       rationale:
         gripVal && gripVal > 7.5
           ? 'Elevated rotational traction & hard surface: avoid aggressive bladed cleats to reduce ankle/knee torque during cutting.'
@@ -152,8 +152,8 @@ export function getBootRecommendation(
     code: 'AG',
     name: 'Artificial Grass / Multi-Stud (AG)',
     studProfile: 'Low-Profile Hollow Conical Multi-Studs (<8mm)',
-    colorClass: 'text-rose-400',
-    badgeBg: 'bg-rose-500/15 border-rose-500/40 text-rose-300',
+    colorClass: 'text-[#DA291C]',
+    badgeBg: 'bg-red-50 border-red-300 text-[#DA291C]',
     rationale:
       'Very high surface compaction or synthetic turf. Multi-stud AG soleplate distributes plantar pressure and minimizes peak rotational torque.',
   };

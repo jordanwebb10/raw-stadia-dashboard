@@ -46,19 +46,22 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
       {/* Left 8 Columns: Interactive 18-Zone Pitch Map */}
-      <div className="xl:col-span-8 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+      <div
+        className="xl:col-span-8 bg-white border border-[#E2E8F0] rounded-[10px] p-5 flex flex-col justify-between"
+        style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+      >
         {/* Controls Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-[#E5E9F0]">
           <div>
             <div className="flex items-center gap-2">
-              <Compass className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-lg font-bold text-white">
+              <Compass className="w-5 h-5 text-[#C69214]" />
+              <h3 className="text-lg font-extrabold text-[#2E3440]">
                 18-Zone Spatial Surface Intelligence Map — {evaluation.pitchName}
               </h3>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {evaluation.venue} • Date: <strong className="text-slate-200">{evaluation.date}</strong> •
-              Session Objective: <strong className="text-emerald-400">{evaluation.sessionObjective}</strong>
+            <p className="text-xs text-[#64748B] mt-0.5 font-medium">
+              {evaluation.venue} • Date: <strong className="text-[#2E3440]">{evaluation.date}</strong> •
+              Session Objective: <strong className="text-[#001489]">{evaluation.sessionObjective}</strong>
             </p>
           </div>
 
@@ -66,13 +69,13 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
             <button
               type="button"
               onClick={() => setShowSnakePath(!showSnakePath)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
+              className={`px-3 py-1.5 rounded-[7px] text-xs font-bold border flex items-center gap-1.5 transition-all ${
                 showSnakePath
-                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                  : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-[#EFF6FF] border-[#001489] text-[#001489]'
+                  : 'bg-[#F8F9FA] border-[#CBD5E1] text-[#2E3440] hover:border-[#C69214]'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="w-3.5 h-3.5 text-[#C69214]" />
               {showSnakePath ? 'Hide Tester Walk (1→18)' : 'Show Tester Snake Path (1→18)'}
             </button>
 
@@ -80,13 +83,13 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
               <button
                 type="button"
                 onClick={() => setDeltaMode(!deltaMode)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
+                className={`px-3 py-1.5 rounded-[7px] text-xs font-bold border flex items-center gap-1.5 transition-all ${
                   deltaMode
-                    ? 'bg-violet-500/20 border-violet-500/50 text-violet-300'
-                    : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
+                    ? 'bg-purple-50 border-purple-500 text-purple-800'
+                    : 'bg-[#F8F9FA] border-[#CBD5E1] text-[#2E3440] hover:border-[#C69214]'
                 }`}
               >
-                <Eye className="w-3.5 h-3.5" />
+                <Eye className="w-3.5 h-3.5 text-purple-600" />
                 {deltaMode ? `Showing Δ vs ${comparisonEval.pitchName}` : 'Zone Δ vs REF'}
               </button>
             )}
@@ -95,7 +98,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
 
         {/* Metric Selector Pills */}
         <div className="flex flex-wrap items-center gap-1.5 mb-4">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mr-1">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#64748B] mr-1">
             Active Layer:
           </span>
           {ALL_INDEX_NAMES.map((m) => {
@@ -106,12 +109,12 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 key={m}
                 type="button"
                 onClick={() => onSelectMetric(m)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border ${
+                className={`px-2.5 py-1 rounded-[6px] text-xs transition-all border ${
                   isAct
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm font-bold'
+                    ? 'bg-[#001489] text-white border-[#C69214] shadow-sm font-extrabold'
                     : isPerf
-                    ? 'bg-slate-800/90 text-slate-200 border-slate-700 hover:border-slate-500'
-                    : 'bg-slate-900/90 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200'
+                    ? 'bg-[#F8FAFC] text-[#2E3440] border-[#CBD5E1] font-bold hover:border-[#C69214]'
+                    : 'bg-white text-[#64748B] border-[#E2E8F0] font-semibold hover:border-[#CBD5E1] hover:text-[#2E3440]'
                 }`}
               >
                 {m} ({evaluation.averages[m].toFixed(1)})
@@ -120,10 +123,15 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
           })}
         </div>
 
-        {/* Full Soccer Pitch Visual Container */}
-        <div className="relative rounded-2xl border-2 border-emerald-500/30 bg-gradient-to-b from-emerald-950/70 via-slate-950/90 to-emerald-950/70 p-4 sm:p-6 overflow-hidden shadow-inner">
+        {/* Full Soccer Pitch Visual Container (Matching mnt-data-management green pitch canvas) */}
+        <div
+          className="relative rounded-[12px] border-2 border-[#15803D] p-4 sm:p-6 overflow-hidden shadow-inner"
+          style={{
+            background: 'linear-gradient(180deg, #166534 0%, #14532D 50%, #166534 100%)',
+          }}
+        >
           {/* Pitch Orientation Labels */}
-          <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-emerald-300/70 mb-2 px-2">
+          <div className="flex justify-between items-center text-[10px] font-extrabold uppercase tracking-widest text-emerald-100/90 mb-2 px-2">
             <span>← Left Goal Third (Pos Y = 1)</span>
             <span>North / Top Touchline (Pos X = 3) • Gym / Camera Side</span>
             <span>Right Goal Third (Pos Y = 6) →</span>
@@ -144,7 +152,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                   y="10"
                   width="96.6"
                   height="300"
-                  fill={col % 2 === 0 ? 'rgba(16, 185, 129, 0.04)' : 'rgba(6, 78, 59, 0.08)'}
+                  fill={col % 2 === 0 ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.08)'}
                 />
               ))}
               {/* Outer pitch lines */}
@@ -154,7 +162,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 width="580"
                 height="300"
                 fill="none"
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth="2.5"
               />
               {/* Halfway line */}
@@ -163,7 +171,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 y1="10"
                 x2="300"
                 y2="310"
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth="2.5"
               />
               {/* Center circle & spot */}
@@ -172,10 +180,10 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 cy="160"
                 r="52"
                 fill="none"
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth="2.5"
               />
-              <circle cx="300" cy="160" r="3.5" fill="rgba(255,255,255,0.35)" />
+              <circle cx="300" cy="160" r="3.5" fill="rgba(255,255,255,0.65)" />
               {/* Left Penalty Box & 6-Yard Box */}
               <rect
                 x="10"
@@ -183,7 +191,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 width="88"
                 height="184"
                 fill="none"
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth="2.5"
               />
               <rect
@@ -192,7 +200,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 width="32"
                 height="96"
                 fill="none"
-                stroke="rgba(255,255,255,0.2)"
+                stroke="rgba(255,255,255,0.38)"
                 strokeWidth="2"
               />
               {/* Right Penalty Box & 6-Yard Box */}
@@ -202,7 +210,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 width="88"
                 height="184"
                 fill="none"
-                stroke="rgba(255,255,255,0.22)"
+                stroke="rgba(255,255,255,0.45)"
                 strokeWidth="2.5"
               />
               <rect
@@ -211,7 +219,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 width="32"
                 height="96"
                 fill="none"
-                stroke="rgba(255,255,255,0.2)"
+                stroke="rgba(255,255,255,0.38)"
                 strokeWidth="2"
               />
 
@@ -219,8 +227,8 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
               {showSnakePath && (
                 <polyline
                   fill="none"
-                  stroke="rgba(52, 211, 153, 0.55)"
-                  strokeWidth="3"
+                  stroke="#FDE047"
+                  strokeWidth="3.5"
                   strokeDasharray="6 4"
                   points={SNAKE_ZONE_COORDS.map((c) => {
                     const cx = 10 + (c.posY - 0.5) * (580 / 6);
@@ -255,12 +263,12 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                           colorSpec.bg
                         } ${colorSpec.border} ${colorSpec.text} ${
                           isSelected
-                            ? 'ring-4 ring-white scale-110 z-20'
+                            ? 'ring-4 ring-[#C69214] scale-110 z-20'
                             : 'hover:scale-105 opacity-95 hover:opacity-100'
                         }`}
                       >
                         {/* Zone Number Pill */}
-                        <span className="text-[9px] font-bold uppercase tracking-tighter opacity-80 leading-none">
+                        <span className="text-[9px] font-bold uppercase tracking-tighter opacity-85 leading-none">
                           Z{z.zone}
                         </span>
 
@@ -274,14 +282,14 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                         </span>
 
                         {/* Coordinates sub-label */}
-                        <span className="text-[8px] font-mono opacity-75 leading-none">
+                        <span className="text-[8px] font-mono opacity-80 leading-none">
                           ({z.posX},{z.posY})
                         </span>
 
                         {/* Hotspot Alert Badge */}
                         {hasHotspot && (
                           <span
-                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 border border-white flex items-center justify-center text-white shadow"
+                            className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#DA291C] border border-white flex items-center justify-center text-white text-[10px] font-black shadow"
                             title="Localized Surface Hotspot"
                           >
                             !
@@ -295,7 +303,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-between items-center text-[10px] font-bold uppercase tracking-widest text-emerald-300/70 mt-2 px-2">
+          <div className="flex flex-wrap justify-between items-center text-[10px] font-extrabold uppercase tracking-widest text-emerald-100/90 mt-2 px-2">
             <span>Pos Y: 1 → 6 (Lengthwise Thirds)</span>
             <span>South / Bottom Touchline (Pos X = 1) • Team Benches Side</span>
             <span>Uniformity Score: {evaluation.uniformityScore}%</span>
@@ -303,7 +311,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
         </div>
 
         {/* Legend & Summary Footer */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-[#64748B] font-semibold">
           <div className="flex flex-wrap items-center gap-4">
             <span className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-full bg-emerald-600 inline-block border border-emerald-300" />
@@ -318,7 +326,7 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
               Critical Hotspot (Grip ≥ 8.0 or Impact ≥ 7.1)
             </span>
           </div>
-          <div className="font-mono text-slate-300">
+          <div className="font-mono text-[#2E3440]">
             Pitch Mean: <strong>{evaluation.averages[activeMetric].toFixed(2)}</strong> • SD:{' '}
             <strong>±{evaluation.stdDevs[activeMetric].toFixed(2)}</strong> • Range:{' '}
             <strong>
@@ -331,20 +339,23 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
       {/* Right 4 Columns: Selected Zone Diagnostic Inspector + Hotspots */}
       <div className="xl:col-span-4 flex flex-col gap-5">
         {/* Zone Diagnostic Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div
+          className="bg-white border border-[#E2E8F0] rounded-[10px] p-5"
+          style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
+          <div className="flex items-center justify-between border-b border-[#E5E9F0] pb-3 mb-4">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+              <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-[#C69214]">
                 Zone Diagnostic Inspector
               </span>
-              <h4 className="text-lg font-extrabold text-white">
+              <h4 className="text-lg font-black text-[#2E3440]">
                 Zone {activeZoneObj.zone} • Pos ({activeZoneObj.posX}, {activeZoneObj.posY})
               </h4>
-              <p className="text-xs text-slate-400">{zoneCoordMeta?.label}</p>
+              <p className="text-xs text-[#64748B] font-medium">{zoneCoordMeta?.label}</p>
             </div>
             <div className="text-right">
-              <div className="text-xs text-slate-400">Active ({activeMetric})</div>
-              <div className="text-2xl font-black text-emerald-400">
+              <div className="text-xs text-[#64748B] font-bold">Active ({activeMetric})</div>
+              <div className="text-2xl font-black text-[#001489]">
                 {activeZoneObj.metrics[activeMetric].toFixed(2)}
               </div>
             </div>
@@ -360,15 +371,15 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                 <div
                   key={m}
                   onClick={() => onSelectMetric(m)}
-                  className={`cursor-pointer p-2.5 rounded-xl border transition-all ${
+                  className={`cursor-pointer p-2.5 rounded-[8px] border transition-all ${
                     activeMetric === m
-                      ? 'bg-emerald-500/15 border-emerald-500/50'
-                      : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                      ? 'bg-[#EFF6FF] border-[#001489]'
+                      : 'bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#C69214]'
                   }`}
                 >
-                  <div className="text-[10px] font-bold uppercase text-slate-400">{m}</div>
-                  <div className="text-lg font-extrabold text-white">{zv.toFixed(2)}</div>
-                  <div className="text-[10px] font-mono text-slate-400">
+                  <div className="text-[10px] font-extrabold uppercase text-[#64748B]">{m}</div>
+                  <div className="text-lg font-black text-[#2E3440]">{zv.toFixed(2)}</div>
+                  <div className="text-[10px] font-mono text-[#64748B] font-semibold">
                     {diff >= 0 ? `+${diff}` : diff} vs {compZoneObj ? 'REF' : 'Mean'}
                   </div>
                 </div>
@@ -377,26 +388,26 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
           </div>
 
           {/* Zone Boot Recommendation */}
-          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 mb-4">
+          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[8px] p-3 mb-4">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <Footprints className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-extrabold text-[#2E3440] flex items-center gap-1.5">
+                <Footprints className="w-4 h-4 text-[#C69214]" />
                 Zone {activeZoneObj.zone} Footwear Profile
               </span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded border ${zoneBootRec.badgeBg}`}>
+              <span className={`text-xs font-extrabold px-2 py-0.5 rounded border ${zoneBootRec.badgeBg}`}>
                 {zoneBootRec.code} ({activeZoneObj.metrics.Boot.toFixed(2)})
               </span>
             </div>
-            <div className="text-xs font-semibold text-white">{zoneBootRec.name}</div>
-            <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+            <div className="text-xs font-bold text-[#001489]">{zoneBootRec.name}</div>
+            <p className="text-[11px] text-[#434C5E] mt-0.5 leading-relaxed">
               {zoneBootRec.rationale}
             </p>
           </div>
 
           {/* 6 Training Goal Scores in this Zone */}
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="text-xs font-extrabold uppercase tracking-[0.06em] text-[#64748B] mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#C69214]" />
               Zone {activeZoneObj.zone} Training Goal Suitability (0–10)
             </div>
             <div className="space-y-2">
@@ -409,16 +420,16 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                       onClick={() => onSelectMetric(tg)}
                       className="cursor-pointer group flex items-center gap-2"
                     >
-                      <span className="w-20 text-xs font-semibold text-slate-300 group-hover:text-emerald-300">
+                      <span className="w-20 text-xs font-bold text-[#434C5E] group-hover:text-[#001489]">
                         {tg}
                       </span>
-                      <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-[#E2E8F0] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                          className="h-full bg-gradient-to-r from-[#001489] to-[#C69214] rounded-full"
                           style={{ width: `${Math.min(100, (val / 10) * 100)}%` }}
                         />
                       </div>
-                      <span className="w-10 text-right text-xs font-mono font-bold text-white">
+                      <span className="w-10 text-right text-xs font-mono font-bold text-[#2E3440]">
                         {val.toFixed(2)}
                       </span>
                     </div>
@@ -430,19 +441,22 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
         </div>
 
         {/* Automated Grounds & Clinical Hotspot Alerts */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1">
+        <div
+          className="bg-white border border-[#E2E8F0] rounded-[10px] p-5 flex-1"
+          style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)' }}
+        >
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <h4 className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#2E3440] flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-[#DA291C]" />
               Localized Surface Hotspots ({evaluation.hotspots.length})
             </h4>
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-xs font-mono font-bold text-[#64748B]">
               Uniformity: {evaluation.uniformityScore}/100
             </span>
           </div>
 
           {evaluation.hotspots.length === 0 ? (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 text-xs text-emerald-200">
+            <div className="bg-emerald-50 border border-emerald-300 rounded-[8px] p-3 text-xs text-emerald-900 font-medium">
               All 18 zones on <strong>{evaluation.pitchName}</strong> fall within desirable biomechanical
               bounds (no Grip spikes ≥ 8.0 or extreme Impact anomalies detected).
             </div>
@@ -456,21 +470,21 @@ export const PitchHeatmap18Zone: React.FC<PitchHeatmap18ZoneProps> = ({
                     onSelectZone(h.zone);
                     onSelectMetric(h.metric);
                   }}
-                  className={`w-full text-left p-2.5 rounded-xl border transition-colors ${
+                  className={`w-full text-left p-2.5 rounded-[8px] border transition-colors ${
                     h.severity === 'critical'
-                      ? 'bg-rose-500/10 border-rose-500/40 hover:bg-rose-500/20'
-                      : 'bg-amber-500/10 border-amber-500/40 hover:bg-amber-500/20'
+                      ? 'bg-red-50 border-red-300 hover:bg-red-100/70'
+                      : 'bg-amber-50 border-amber-300 hover:bg-amber-100/70'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className={h.severity === 'critical' ? 'text-rose-300' : 'text-amber-300'}>
+                  <div className="flex items-center justify-between text-xs font-extrabold">
+                    <span className={h.severity === 'critical' ? 'text-[#DA291C]' : 'text-amber-900'}>
                       Zone {h.zone} (Pos {h.posX},{h.posY}) • {h.metric}: {h.value.toFixed(2)}
                     </span>
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-950/60 text-slate-300">
+                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-white border border-[#CBD5E1] text-[#2E3440]">
                       Inspect Zone
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-300 mt-1">{h.reason}</p>
+                  <p className="text-[11px] text-[#434C5E] mt-1 font-medium">{h.reason}</p>
                 </button>
               ))}
             </div>
